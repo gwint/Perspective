@@ -11,8 +11,10 @@
 	},
 	"content_scripts" : [
 		{
-			"matches" : ["http://*.developer.chrome.com/*"],
-			"js" : ["contentScript.js"]
+			"matches" : ["http://*/*", "https://*/*"],
+			"js" : ["contentScript.js"],
+			"run_at": "document_start",
+                        "all_frames": true
 		}
 	],
 	"page_action" : {
