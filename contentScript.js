@@ -1,8 +1,7 @@
-console.log("content script ran.");
-
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-    if(msg.data !== undefined) {
-        console.log("contentScript got message: ");
-		console.log(msg.data);
-    }
-});
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    console.log("request sent from popup to content script: " + request);
+    if (request.greeting == "hello there good sir")
+      sendResponse({farewell: "goodbye good sir"});
+  }
+);

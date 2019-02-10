@@ -1,35 +1,30 @@
 {
-	"name" : "Chrome extension tutorial",
-	"version" : "1.0",
-	"description" : "My first Chrome extension. Woohoo!",
-	"permissions" : ["activeTab", "declarativeContent", "storage"],
-	"manifest_version" : 2,
-	"options_page" : "options.html",
-	"background" : {
-		"scripts" : ["background.js"],
-		"persistent" : false
-	},
-	"content_scripts" : [
-		{
-			"matches" : ["http://*/*", "https://*/*"],
-			"js" : ["contentScript.js"],
-			"run_at": "document_start",
-                        "all_frames": true
-		}
-	],
-	"page_action" : {
-		"default_popup" : "popup.html",
-		"default_icon" : {
-			"16" : "images/get_started16.png",
-			"32" : "images/get_started32.png",
-			"48" : "images/get_started48.png",
-			"128" : "images/get_started128.png"
-		}
-	},
-	"icons" : {
-		"16" : "images/get_started16.png",
-		"32" : "images/get_started32.png",
-		"48" : "images/get_started48.png",
-		"128" : "images/get_started128.png"
-	}
+  "manifest_version": 2,
+  "name": "Test Extension",
+  "version": "0.0",
+  "offline_enabled": true,
+
+  "background": {
+    "persistent": false,
+    "scripts": ["background.js"]
+  },
+
+  "content_scripts": [{
+    "matches": ["https://mail.google.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }],
+
+  "page_action": {
+    "default_title": "Test Extension",
+    //"default_icon": {
+    //  "19": "img/icon19.png",
+    //  "38": "img/icon38.png"
+    //},
+    "default_popup": "popup.html"
+  }
+
+  // No special permissions required...
+  //"permissions": []
 }

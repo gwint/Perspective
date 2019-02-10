@@ -1,28 +1,30 @@
-// gets button from popup.html
-let getTone = document.getElementById('getTone');
+// Update the relevant fields with the new data
+function setDOMInfo(info) {
+  console.log(info.emailText);
+}
 
-// gets color value from storage
-chrome.storage.sync.get('color', function(data) {
-	getTone.style.backgroundColor = data.color;
-	getTone.setAttribute('value', data.color);
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Once the DOM is ready...
+window.addEventListener('DOMContentLoaded', function () {
+  // ...query for the active tab...
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  },
+  async function (tabs) {
+    while(1) {
+      // ...and send a request for the DOM info...
+      console.log("message sent from popup to content script");
+      chrome.tabs.sendMessage(
+          tabs[0].id,
+          {from: 'popup', subject: 'DOMInfo'},
+          // ...also specifying a callback to be called
+          //    from the receiving end (content script)
+          setDOMInfo);
+      await sleep(5000);
+    }
+  });
 });
-
-getTone.onclick = function(element) {
-	checkboxes = document.getElementsByClassName('toneCheckbox');
-	checked = [];
-	for(let i=0; i<checkboxes.length; i++) {
-		c = checkboxes[i];
-		if(c.checked) {
-			checked.push(c.name);
-		}
-	}
-	// sends a message to contentScript.js
-	chrome.tabs.query({ active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-            data: checked 
-        });
-    });
-
-	console.log("Does this run?!");
-	console.log(checked);
-};
