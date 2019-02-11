@@ -9,6 +9,8 @@ chrome.runtime.sendMessage({
 chrome.runtime.onMessage.addListener(function (msg, sender, response) {
   // First, validate the message's structure
   console.log("message recieved at content script");
+  console.log(msg);
+  msgBody = document.querySelector('div[aria-label="Message Body"]');
   if((msg.from === 'popup') && (msg.subject === 'DOMInfo')) {
     // Collect the necessary data
     // (For your specific requirements `document.querySelectorAll(...)`
@@ -20,7 +22,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
       emailText: "test text"
     };
 
-    msgBody = document.querySelector('div[aria-label="Message Body"]');
     if(msgBody) {
       domInfo.emailText = msgBody.innerHTML;
     }
@@ -28,5 +29,11 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     // Directly respond to the sender (popup),
     // through the specified callback */
     response(domInfo);
+  }
+  else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
+    if(msgBody) {
+      msgBody.innerHTML = msg.coloredText;
+      console.log("text updated successfully");
+    }
   }
 });
