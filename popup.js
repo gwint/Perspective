@@ -3,7 +3,7 @@ function setDOMInfo(info) {
   console.log(info.emailText);
   analyzedText = '<span style="background-color:yellow;">' +
                  info.emailText +
-                 '</span>' + "a";
+                 '</span>' + '<span id="nextPosPlacer">dummy text</span>';
   console.log(analyzedText);
 
   chrome.tabs.query(

@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     };
 
     if(msgBody) {
-      domInfo.emailText = msgBody.innerHTML;
+      domInfo.emailText = msgBody.innerText;
     }
 
     // Directly respond to the sender (popup),
@@ -33,6 +33,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
   else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
     if(msgBody) {
       msgBody.innerHTML = msg.coloredText;
+      document.getElementById("nextPosPlacer").innerText = '\uFEFF';
       console.log("text updated successfully");
     }
   }
