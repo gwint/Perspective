@@ -27,6 +27,47 @@ function setDOMInfo(info) {
 
   cleanedEmailText = removeSpanTags(text.replace(/[\uFEFF]/g, ""));
 
+  // Make API call and deal with response
+  let textObj = { text: cleanedEmailText };
+  let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-27-09-21";
+  let apiKey = "t6dFCXw5GdOrTrCS8sM7iTaED0GCJmS93ksh-6VLJFyu";
+
+  var response = function(response) {
+    console.log("Inside response function");
+    if(response.status >= 200 && response.status < 300) {
+      return Promise.resolve(response);
+    }
+    else {
+      return Promise.reject(new Error(response.statusText));
+    }
+  };
+
+  var json = function(response) {
+    return response.json();
+  };
+
+  fetch(
+    toneApi,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: new Headers({
+        "Content-Type": "application/json",
+        "apikey": apiKey,
+        "Access-Control-Allow-Origin": toneApi
+      }),
+      body: JSON.stringify(cleanedEmailText)
+    }
+  )
+  .then(status)
+  .then(json)
+  .then(function(data) {
+    console.log("Request succeeded with JSON response", data);
+  })
+  .catch(function(error) {
+    console.log("Request failed", error);
+  });
+
   // Chrome Browser does not allow cursor to be placed outside of most
   // recently written to child node, so a 0-width character is used so
   // uncolored text can be written following the block of colored text
@@ -38,7 +79,6 @@ function setDOMInfo(info) {
                  '\uFEFF';
   console.log(analyzedText);
 
-  // Make API call and deal with response
 
   chrome.tabs.query(
     {
