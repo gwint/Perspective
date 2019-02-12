@@ -1,10 +1,44 @@
 // Update the relevant fields with the new data
 function setDOMInfo(info) {
   console.log(info.emailText);
+  text = info.emailText;
+
+  let removeSpanTags = function(aStr) {
+    if(aStr == null) {
+      return null;
+    }
+    if(aStr.length == 0) {
+      return "";
+    }
+    strNoSpanTags = "";
+    let i = 0;
+    while(i < aStr.length) {
+      if(aStr[i] === "<") {
+        while(aStr[i] !== ">")
+          i++;
+      }
+      else {
+        strNoSpanTags = strNoSpanTags + aStr[i];
+      }
+      i++;
+    }
+    return strNoSpanTags;
+  };
+
+  cleanedEmailText = removeSpanTags(text.replace(/[\uFEFF]/g, ""));
+
+  // Chrome Browser does not allow cursor to be placed outside of most
+  // recently written to child node, so a 0-width character is used so
+  // uncolored text can be written following the block of colored text
+  // sent from the popup.
+
   analyzedText = '<span style="background-color:yellow;">' +
-                 info.emailText +
-                 '</span>' + '<span id="nextPosPlacer">dummy text</span>';
+                 cleanedEmailText +
+                 '</span>' +
+                 '\uFEFF';
   console.log(analyzedText);
+
+  // Make API call and deal with response
 
   chrome.tabs.query(
     {

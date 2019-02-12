@@ -22,6 +22,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
       emailText: "test text"
     };
 
+    // Need to strip out span tags so that they don't interfere with
+    // what gets sent to tone analyzer
     if(msgBody) {
       domInfo.emailText = msgBody.innerText;
     }
@@ -33,7 +35,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
   else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
     if(msgBody) {
       msgBody.innerHTML = msg.coloredText;
-      document.getElementById("nextPosPlacer").innerText = '\uFEFF';
       console.log("text updated successfully");
     }
   }
