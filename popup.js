@@ -29,37 +29,51 @@ function setDOMInfo(info) {
 
   // Make API call and deal with response
   let textObj = { text: cleanedEmailText };
-  let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-27-09-21";
   let apiKey = "t6dFCXw5GdOrTrCS8sM7iTaED0GCJmS93ksh-6VLJFyu";
+  let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21?APIKEY=" + apiKey;
+  alert(toneApi);
 
   var response = function(response) {
-    console.log("Inside response function");
+    alert("response status: " + response.status);
     if(response.status >= 200 && response.status < 300) {
+      alert("valid response");
+      alert(response);
+      alert(response.json());
       return Promise.resolve(response);
     }
     else {
+      alert(JSON.stringify(response));
       return Promise.reject(new Error(response.statusText));
     }
   };
 
   var json = function(response) {
+    alert(respone);
     return response.json();
   };
 
-  fetch(
-    toneApi,
-    {
-      method: "POST",
-      credentials: "include",
-      headers: new Headers({
-        "Content-Type": "application/json",
-        "apikey": apiKey,
-        "Access-Control-Allow-Origin": toneApi
-      }),
-      body: JSON.stringify(cleanedEmailText)
-    }
-  )
-  .then(status)
+  //fetch
+  //(
+  //  toneApi,
+  //  {
+  //    //credentials: "include",
+  //    method: "POST",
+  //    headers: new Headers({
+  //      //"apikey": apiKey,
+  //      "Content-Type": "application/json"
+  //    }),
+  //    body: JSON.stringify(textObj)
+  //  }
+  //)
+  fetch("https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21", {
+  body: '{"text": "What do you want you stupid idiot!  You suck!"}',
+  headers: {
+    Authorization: "Basic YXBpa2V5OnQ2ZEZDWHc1R2RPclRyQ1M4c003aVRhRUQwR0NKbVM5M2tzaC02VkxKRnl1",
+    "Content-Type": "application/json"
+  },
+  method: "POST"
+})
+  .then(response)
   .then(json)
   .then(function(data) {
     console.log("Request succeeded with JSON response", data);
