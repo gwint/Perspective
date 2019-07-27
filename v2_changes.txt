@@ -1,0 +1,2 @@
+1) Email structure should be preserved after coloring (e.g line breaks should
+    not disappear)

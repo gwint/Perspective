@@ -1,8 +1,8 @@
 // Inform the background page that
 // this tab should have a page-action
 chrome.runtime.sendMessage({
-  from: 'content',
-  subject: 'showPageAction'
+    from: 'content',
+    subject: 'showPageAction'
 });
 
 // Listen for messages from the popup
@@ -25,7 +25,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     // Need to strip out span tags so that they don't interfere with
     // what gets sent to tone analyzer
     if(msgBody) {
-      domInfo.emailText = msgBody.innerText;
+        domInfo.emailText = msgBody.innerHTML;
+        alert(domInfo.emailText);
     }
 
     // Directly respond to the sender (popup),

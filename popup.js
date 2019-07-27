@@ -1,114 +1,138 @@
-// Update the relevant fields with the new data
-function setDOMInfo(info) {
-  console.log(info.emailText);
-  text = info.emailText;
+COLOR_CODE = {
+    "anger": "red",
+    "sadness": "blue",
+    "fear": "grey",
+    "joy": "yellow",
+    "analytical": "",
+    "confident": "",
+    "tentative": ""
+};
 
-  let removeSpanTags = function(aStr) {
+function removeSpanTags(aStr) {
     if(aStr == null) {
-      return null;
+        return null;
     }
     if(aStr.length == 0) {
-      return "";
+        return "";
     }
     strNoSpanTags = "";
     let i = 0;
     while(i < aStr.length) {
-      if(aStr[i] === "<") {
-        while(aStr[i] !== ">")
-          i++;
-      }
-      else {
-        strNoSpanTags = strNoSpanTags + aStr[i];
-      }
-      i++;
+        if(aStr[i] === "<") {
+            while(aStr[i] !== ">")
+                i++;
+        }
+        else {
+            strNoSpanTags = strNoSpanTags + aStr[i];
+        }
+        i++;
     }
     return strNoSpanTags;
-  };
+}
 
-  cleanedEmailText = removeSpanTags(text.replace(/[\uFEFF]/g, ""));
-
-  // Make API call and deal with response
-  let textObj = { text: cleanedEmailText };
-  let apiKey = "t6dFCXw5GdOrTrCS8sM7iTaED0GCJmS93ksh-6VLJFyu";
-  let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21?APIKEY=" + apiKey;
-  alert(toneApi);
-
-  var response = function(response) {
+function getResponse(response) {
     alert("response status: " + response.status);
     if(response.status >= 200 && response.status < 300) {
-      alert("valid response");
-      alert(response);
-      alert(response.json());
-      return Promise.resolve(response);
+        alert("valid response");
+        alert(response);
+        return Promise.resolve(response);
     }
     else {
-      alert(JSON.stringify(response));
-      return Promise.reject(new Error(response.statusText));
+        alert("Invalid response: " + JSON.stringify(response));
+        return Promise.reject(new Error(response.statusText));
     }
-  };
+}
 
-  var json = function(response) {
-    alert(respone);
+function getJson(response) {
     return response.json();
-  };
+}
 
-  //fetch
-  //(
-  //  toneApi,
-  //  {
-  //    //credentials: "include",
-  //    method: "POST",
-  //    headers: new Headers({
-  //      //"apikey": apiKey,
-  //      "Content-Type": "application/json"
-  //    }),
-  //    body: JSON.stringify(textObj)
-  //  }
-  //)
-  fetch("https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21", {
-  body: '{"text": "What do you want you stupid idiot!  You suck!"}',
-  headers: {
-    Authorization: "Basic YXBpa2V5OnQ2ZEZDWHc1R2RPclRyQ1M4c003aVRhRUQwR0NKbVM5M2tzaC02VkxKRnl1",
-    "Content-Type": "application/json"
-  },
-  method: "POST"
-})
-  .then(response)
-  .then(json)
-  .then(function(data) {
-    console.log("Request succeeded with JSON response", data);
-  })
-  .catch(function(error) {
-    console.log("Request failed", error);
-  });
+/*
+    Returns color-coded version of text where the color is dependant on the
+    tone of each sentence.
 
-  // Chrome Browser does not allow cursor to be placed outside of most
-  // recently written to child node, so a 0-width character is used so
-  // uncolored text can be written following the block of colored text
-  // sent from the popup.
+    @param {string} text
+    @parm {object} toneData
 
-  analyzedText = '<span style="background-color:yellow;">' +
-                 cleanedEmailText +
-                 '</span>' +
-                 '\uFEFF';
-  console.log(analyzedText);
+    @return string
+*/
+function colorCodeText(text, toneData) {
+    
+}
 
-
-  chrome.tabs.query(
-    {
-      active: true,
-      currentWindow: true
-    },
-    function(tabs) {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
-        // ...also specifying a callback to be called
-        //    from the receiving end (content script)
-        null
-      );
+function getDominantTone(toneScores) {
+    if(toneScores.length == 0) {
+        return null;
     }
-  )
+
+    dominantTone = toneScores[0]['tone_name'];
+    dominantToneScore = toneScores[0]['score'];
+
+    for(let i = 1; i < toneScores.length; i++) {
+        if(toneScores[i]['score'] > dominantToneScore) {
+            dominantToneScore = toneScores[i]['score'];
+            dominantTone = toneScores[i]['tone_name'];
+        }
+    }
+
+    return dominantTone;
+}
+
+
+// Update the relevant fields with the new data
+function setDOMInfo(info) {
+    console.log(info.emailText);
+    text = info.emailText;
+
+    cleanedEmailText = removeSpanTags(text.replace(/[\uFEFF]/g, ""));
+
+    // Make API call and deal with response
+    let textObj = { text: cleanedEmailText };
+    let accessToken = "eyJraWQiOiIyMDE5MDUxMyIsImFsZyI6IlJTMjU2In0.eyJpYW1faWQiOiJpYW0tU2VydmljZUlkLWExMTdhZjZjLTlhNjUtNDNkZi1hMmExLTc4MmM5MTYzY2NmOSIsImlkIjoiaWFtLVNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJyZWFsbWlkIjoiaWFtIiwiaWRlbnRpZmllciI6IlNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJzdWIiOiJTZXJ2aWNlSWQtYTExN2FmNmMtOWE2NS00M2RmLWEyYTEtNzgyYzkxNjNjY2Y5Iiwic3ViX3R5cGUiOiJTZXJ2aWNlSWQiLCJ1bmlxdWVfaW5zdGFuY2VfY3JucyI6WyJjcm46djE6Ymx1ZW1peDpwdWJsaWM6dG9uZS1hbmFseXplcjp1cy1zb3V0aDphLzkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0OmYyMTFjZDE1LTcwN2ItNGIxNS1iZmQ0LWI0NGYzNjY5ZDJkYTo6Il0sImFjY291bnQiOnsidmFsaWQiOnRydWUsImJzcyI6IjkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0In0sImlhdCI6MTU2NDI0NjgwOCwiZXhwIjoxNTY0MjUwNDA4LCJpc3MiOiJodHRwczovL2lhbS5jbG91ZC5pYm0uY29tL2lkZW50aXR5IiwiZ3JhbnRfdHlwZSI6InVybjppYm06cGFyYW1zOm9hdXRoOmdyYW50LXR5cGU6YXBpa2V5Iiwic2NvcGUiOiJpYm0gb3BlbmlkIiwiY2xpZW50X2lkIjoiZGVmYXVsdCIsImFjciI6MSwiYW1yIjpbInB3ZCJdfQ.AmHrtAPf_J0RiFnNPwAxN1IYHL2Yo6SmktvR4G6mIzT_svqwMn9QHEjaUekid3UvXMIeWk9dJI3l2G7RdH8ltBuMUwy63dSKKuJrWet8ENZ9w3XL2tP7LcGmNeJPKSJocuO3Is4dtzHMKWVi8pn_M8HCcHAlKoiyqY8ALdDOVAnpXEYpXILZP0lengXQJDa4Uiq4rWyN-s9E0DApFOU4pYsA01-wUotCnEKn0Kh5vj7idIf56Oi9VAFnk8dYVRjsmt9QJu9KB4pr3gKITbNcGza67XkBMM-9tZbKunlHzJe10ODAzL9vtssvfqFxIpREDOr8A5HLjA5iBbp0g-YC8Q";
+    let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
+    alert(toneApi);
+
+    fetch(toneApi, {
+        "body": JSON.stringify(textObj),
+        "headers": {
+            "Authorization": "Bearer ".concat(accessToken),
+            "Content-Type": "application/json"
+        },
+        "method": "POST"
+    })
+    .then(getResponse)
+    .then(getJson)
+    .then(function(data) {
+        console.log("Request succeeded with JSON response", data);
+    })
+    .catch(function(error) {
+        console.log("Request failed", error);
+    });
+
+    // Chrome Browser does not allow cursor to be placed outside of most
+    // recently written to child node, so a 0-width character is used so
+    // uncolored text can be written following the block of colored text
+    // sent from the popup.
+
+    analyzedText = '<span style="background-color:yellow;">' +
+                   cleanedEmailText +
+                   '</span>' +
+                   '\uFEFF';
+    console.log(analyzedText);
+
+    chrome.tabs.query(
+        { active: true, currentWindow: true },
+        function(tabs) {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
+                // ...also specifying a callback to be called
+                //    from the receiving end (content script)
+                null
+            );
+        }
+    );
+
 }
 
 function getEmailTextAndAnalyze() {
@@ -136,23 +160,23 @@ function sleep(ms) {
 
 // Once the DOM is ready...
 window.addEventListener('DOMContentLoaded', function () {
-  // ...query for the active tab...
-  chrome.tabs.query({
-    active: true,
-    currentWindow: true
-  },
-  function (tabs) {
-    document.getElementById("getTone").onclick = getEmailTextAndAnalyze;
-    //while(1) {
-      // ...and send a request for the DOM info...
-    //  console.log("message sent from popup to content script");
-    //  chrome.tabs.sendMessage(
-    //      tabs[0].id,
-    //      {from: 'popup', subject: 'DOMInfo'},
-          // ...also specifying a callback to be called
-          //    from the receiving end (content script)
-    //      setDOMInfo);
-    //  await sleep(7000);
-    //}
-  });
+    // ...query for the active tab...
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    },
+    function (tabs) {
+        document.getElementById("getTone").onclick = getEmailTextAndAnalyze;
+        //while(1) {
+        // ...and send a request for the DOM info...
+        //  console.log("message sent from popup to content script");
+        //  chrome.tabs.sendMessage(
+        //      tabs[0].id,
+        //      {from: 'popup', subject: 'DOMInfo'},
+            // ...also specifying a callback to be called
+            //    from the receiving end (content script)
+        //      setDOMInfo);
+        //  await sleep(7000);
+        //}
+    });
 });
