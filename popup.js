@@ -3,9 +3,10 @@ COLOR_CODE = {
     "sadness": "blue",
     "fear": "grey",
     "joy": "yellow",
-    "analytical": "",
-    "confident": "",
-    "tentative": ""
+    "analytical": "yellow",
+    "confident": "yellow",
+    "tentative": "yellow",
+    "": "purple"
 };
 
 function removeSpanTags(aStr) {
@@ -31,14 +32,14 @@ function removeSpanTags(aStr) {
 }
 
 function getResponse(response) {
-    alert("response status: " + response.status);
+    //alert("response status: " + response.status);
     if(response.status >= 200 && response.status < 300) {
-        alert("valid response");
-        alert(response);
+        //alert("valid response");
+        //alert(response);
         return Promise.resolve(response);
     }
     else {
-        alert("Invalid response: " + JSON.stringify(response));
+        //alert("Invalid response: " + JSON.stringify(response));
         return Promise.reject(new Error(response.statusText));
     }
 }
@@ -56,26 +57,52 @@ function getJson(response) {
 
     @return string
 */
-function colorCodeText(text, toneData) {
-    
+function getColoredText(text, toneData) {
+    console.log(toneData);
+    if(!('sentences_tone' in toneData)) {
+        dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
+        dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
+        textColor = COLOR_CODE[dominantTone];
+        coloredText = `<span style="background-color:${textColor};">` +
+                      text + '</span>' + '\uFEFF';
+        return coloredText;
+    }
+
+    console.log(toneData);
+    alert("here");
+    colorCodedText = "";
+    toneData['sentences_tone'].forEach(
+        function(sentenceToneData) {
+            dominantToneIndex = getDominantTone(sentenceToneData['tones']);
+            sentenceText = sentenceToneData['text'];
+            dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
+            console.log(dominantTone);
+            textColor = COLOR_CODE[dominantTone];
+            coloredSentence = `<span style="background-color:${textColor};">` +
+                            sentenceText + '</span>' + '\uFEFF';
+            colorCodedText = colorCodedText.concat(coloredSentence);
+        }
+    );
+
+    return colorCodedText;
 }
 
 function getDominantTone(toneScores) {
     if(toneScores.length == 0) {
-        return null;
+        return "";
     }
 
-    dominantTone = toneScores[0]['tone_name'];
+    dominantToneIndex = 0;
     dominantToneScore = toneScores[0]['score'];
 
     for(let i = 1; i < toneScores.length; i++) {
         if(toneScores[i]['score'] > dominantToneScore) {
             dominantToneScore = toneScores[i]['score'];
-            dominantTone = toneScores[i]['tone_name'];
+            dominantToneIndex = i;
         }
     }
 
-    return dominantTone;
+    return dominantToneIndex;
 }
 
 
@@ -88,9 +115,9 @@ function setDOMInfo(info) {
 
     // Make API call and deal with response
     let textObj = { text: cleanedEmailText };
-    let accessToken = "eyJraWQiOiIyMDE5MDUxMyIsImFsZyI6IlJTMjU2In0.eyJpYW1faWQiOiJpYW0tU2VydmljZUlkLWExMTdhZjZjLTlhNjUtNDNkZi1hMmExLTc4MmM5MTYzY2NmOSIsImlkIjoiaWFtLVNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJyZWFsbWlkIjoiaWFtIiwiaWRlbnRpZmllciI6IlNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJzdWIiOiJTZXJ2aWNlSWQtYTExN2FmNmMtOWE2NS00M2RmLWEyYTEtNzgyYzkxNjNjY2Y5Iiwic3ViX3R5cGUiOiJTZXJ2aWNlSWQiLCJ1bmlxdWVfaW5zdGFuY2VfY3JucyI6WyJjcm46djE6Ymx1ZW1peDpwdWJsaWM6dG9uZS1hbmFseXplcjp1cy1zb3V0aDphLzkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0OmYyMTFjZDE1LTcwN2ItNGIxNS1iZmQ0LWI0NGYzNjY5ZDJkYTo6Il0sImFjY291bnQiOnsidmFsaWQiOnRydWUsImJzcyI6IjkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0In0sImlhdCI6MTU2NDI0NjgwOCwiZXhwIjoxNTY0MjUwNDA4LCJpc3MiOiJodHRwczovL2lhbS5jbG91ZC5pYm0uY29tL2lkZW50aXR5IiwiZ3JhbnRfdHlwZSI6InVybjppYm06cGFyYW1zOm9hdXRoOmdyYW50LXR5cGU6YXBpa2V5Iiwic2NvcGUiOiJpYm0gb3BlbmlkIiwiY2xpZW50X2lkIjoiZGVmYXVsdCIsImFjciI6MSwiYW1yIjpbInB3ZCJdfQ.AmHrtAPf_J0RiFnNPwAxN1IYHL2Yo6SmktvR4G6mIzT_svqwMn9QHEjaUekid3UvXMIeWk9dJI3l2G7RdH8ltBuMUwy63dSKKuJrWet8ENZ9w3XL2tP7LcGmNeJPKSJocuO3Is4dtzHMKWVi8pn_M8HCcHAlKoiyqY8ALdDOVAnpXEYpXILZP0lengXQJDa4Uiq4rWyN-s9E0DApFOU4pYsA01-wUotCnEKn0Kh5vj7idIf56Oi9VAFnk8dYVRjsmt9QJu9KB4pr3gKITbNcGza67XkBMM-9tZbKunlHzJe10ODAzL9vtssvfqFxIpREDOr8A5HLjA5iBbp0g-YC8Q";
+    let accessToken = "eyJraWQiOiIyMDE5MDUxMyIsImFsZyI6IlJTMjU2In0.eyJpYW1faWQiOiJpYW0tU2VydmljZUlkLWExMTdhZjZjLTlhNjUtNDNkZi1hMmExLTc4MmM5MTYzY2NmOSIsImlkIjoiaWFtLVNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJyZWFsbWlkIjoiaWFtIiwiaWRlbnRpZmllciI6IlNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJzdWIiOiJTZXJ2aWNlSWQtYTExN2FmNmMtOWE2NS00M2RmLWEyYTEtNzgyYzkxNjNjY2Y5Iiwic3ViX3R5cGUiOiJTZXJ2aWNlSWQiLCJ1bmlxdWVfaW5zdGFuY2VfY3JucyI6WyJjcm46djE6Ymx1ZW1peDpwdWJsaWM6dG9uZS1hbmFseXplcjp1cy1zb3V0aDphLzkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0OmYyMTFjZDE1LTcwN2ItNGIxNS1iZmQ0LWI0NGYzNjY5ZDJkYTo6Il0sImFjY291bnQiOnsidmFsaWQiOnRydWUsImJzcyI6IjkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0In0sImlhdCI6MTU2NDI5NDI3OCwiZXhwIjoxNTY0Mjk3ODc4LCJpc3MiOiJodHRwczovL2lhbS5jbG91ZC5pYm0uY29tL2lkZW50aXR5IiwiZ3JhbnRfdHlwZSI6InVybjppYm06cGFyYW1zOm9hdXRoOmdyYW50LXR5cGU6YXBpa2V5Iiwic2NvcGUiOiJpYm0gb3BlbmlkIiwiY2xpZW50X2lkIjoiZGVmYXVsdCIsImFjciI6MSwiYW1yIjpbInB3ZCJdfQ.StHSzwcWqSxI6WU-qDywW6nitRZqihFYaQV-YluOyOleuWZ3udSrQBC2-au78GNGTZsH6qveLc7L44zd4Ni-fWgIF9sTu4Ab1EYkdmRgfNhbBruFf4uz5PJdRgoHvWWTFpE1RtSzIcPtMwMRQypZU266UyRuZkTMCcrx35mwd_dhUORPwmV7lPIdcw6OLxPvl5VUk4cLtk5Z8zT5G81hGrmQJZ4SNZmntKT-ZS1NlyJm6bmxQy9l9e_dIosBv80K_xm-ScadAJQBH2yZg9r1KKfJcLphG7w5tk1t-aE1k5nlm38xYHuJGLTbj8sFmscGzJbepy90gQpywQYlTVq1gw";
     let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
-    alert(toneApi);
+    //alert(toneApi);
 
     fetch(toneApi, {
         "body": JSON.stringify(textObj),
@@ -102,8 +129,24 @@ function setDOMInfo(info) {
     })
     .then(getResponse)
     .then(getJson)
-    .then(function(data) {
-        console.log("Request succeeded with JSON response", data);
+    .then(function(jsonData) {
+        console.log("Request succeeded with JSON response", jsonData);
+        analyzedText = getColoredText(cleanedEmailText, jsonData);
+        alert(analyzedText);
+
+        chrome.tabs.query(
+            { active: true, currentWindow: true },
+            function(tabs) {
+                chrome.tabs.sendMessage(
+                    tabs[0].id,
+                    {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
+                    // ...also specifying a callback to be called
+                    //    from the receiving end (content script)
+                    null
+                );
+            }
+        );
+
     })
     .catch(function(error) {
         console.log("Request failed", error);
@@ -118,20 +161,21 @@ function setDOMInfo(info) {
                    cleanedEmailText +
                    '</span>' +
                    '\uFEFF';
-    console.log(analyzedText);
 
-    chrome.tabs.query(
-        { active: true, currentWindow: true },
-        function(tabs) {
-            chrome.tabs.sendMessage(
-                tabs[0].id,
-                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
-                // ...also specifying a callback to be called
-                //    from the receiving end (content script)
-                null
-            );
-        }
-    );
+    //console.log(analyzedText);
+
+    //chrome.tabs.query(
+    //    { active: true, currentWindow: true },
+    //    function(tabs) {
+    //        chrome.tabs.sendMessage(
+    //            tabs[0].id,
+    //            {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
+    //            // ...also specifying a callback to be called
+    //            //    from the receiving end (content script)
+    //            null
+    //        );
+    //    }
+    //);
 
 }
 

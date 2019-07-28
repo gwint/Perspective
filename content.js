@@ -25,8 +25,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     // Need to strip out span tags so that they don't interfere with
     // what gets sent to tone analyzer
     if(msgBody) {
-        domInfo.emailText = msgBody.innerHTML;
-        alert(domInfo.emailText);
+        domInfo.emailText = msgBody.innerText;
+        //alert(domInfo.emailText);
     }
 
     // Directly respond to the sender (popup),
