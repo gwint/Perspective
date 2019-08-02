@@ -33,6 +33,7 @@ function removeSpanTags(aStr) {
 
 function getResponse(response) {
     //alert("response status: " + response.status);
+    //alert(JSON.stringify(response.text));
     if(response.status >= 200 && response.status < 300) {
         //alert("valid response");
         //alert(response);
@@ -46,6 +47,10 @@ function getResponse(response) {
 
 function getJson(response) {
     return response.json();
+}
+
+function getToken(response) {
+    return response.text();
 }
 
 /*
@@ -69,7 +74,6 @@ function getColoredText(text, toneData) {
     }
 
     console.log(toneData);
-    alert("here");
     colorCodedText = "";
     toneData['sentences_tone'].forEach(
         function(sentenceToneData) {
@@ -79,7 +83,8 @@ function getColoredText(text, toneData) {
             console.log(dominantTone);
             textColor = COLOR_CODE[dominantTone];
             coloredSentence = `<span style="background-color:${textColor};">` +
-                            sentenceText + '</span>' + '\uFEFF';
+                              sentenceText + '</span>' +
+                              '\xa0' + '\xa0' + '\uFEFF';
             colorCodedText = colorCodedText.concat(coloredSentence);
         }
     );
@@ -115,10 +120,53 @@ function setDOMInfo(info) {
 
     // Make API call and deal with response
     let textObj = { text: cleanedEmailText };
-    let accessToken = "eyJraWQiOiIyMDE5MDUxMyIsImFsZyI6IlJTMjU2In0.eyJpYW1faWQiOiJpYW0tU2VydmljZUlkLWExMTdhZjZjLTlhNjUtNDNkZi1hMmExLTc4MmM5MTYzY2NmOSIsImlkIjoiaWFtLVNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJyZWFsbWlkIjoiaWFtIiwiaWRlbnRpZmllciI6IlNlcnZpY2VJZC1hMTE3YWY2Yy05YTY1LTQzZGYtYTJhMS03ODJjOTE2M2NjZjkiLCJzdWIiOiJTZXJ2aWNlSWQtYTExN2FmNmMtOWE2NS00M2RmLWEyYTEtNzgyYzkxNjNjY2Y5Iiwic3ViX3R5cGUiOiJTZXJ2aWNlSWQiLCJ1bmlxdWVfaW5zdGFuY2VfY3JucyI6WyJjcm46djE6Ymx1ZW1peDpwdWJsaWM6dG9uZS1hbmFseXplcjp1cy1zb3V0aDphLzkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0OmYyMTFjZDE1LTcwN2ItNGIxNS1iZmQ0LWI0NGYzNjY5ZDJkYTo6Il0sImFjY291bnQiOnsidmFsaWQiOnRydWUsImJzcyI6IjkxOTE4ZDQ4NTczNTQ1NmNiY2FlZDE0OWZiZjA0YmM0In0sImlhdCI6MTU2NDI5NDI3OCwiZXhwIjoxNTY0Mjk3ODc4LCJpc3MiOiJodHRwczovL2lhbS5jbG91ZC5pYm0uY29tL2lkZW50aXR5IiwiZ3JhbnRfdHlwZSI6InVybjppYm06cGFyYW1zOm9hdXRoOmdyYW50LXR5cGU6YXBpa2V5Iiwic2NvcGUiOiJpYm0gb3BlbmlkIiwiY2xpZW50X2lkIjoiZGVmYXVsdCIsImFjciI6MSwiYW1yIjpbInB3ZCJdfQ.StHSzwcWqSxI6WU-qDywW6nitRZqihFYaQV-YluOyOleuWZ3udSrQBC2-au78GNGTZsH6qveLc7L44zd4Ni-fWgIF9sTu4Ab1EYkdmRgfNhbBruFf4uz5PJdRgoHvWWTFpE1RtSzIcPtMwMRQypZU266UyRuZkTMCcrx35mwd_dhUORPwmV7lPIdcw6OLxPvl5VUk4cLtk5Z8zT5G81hGrmQJZ4SNZmntKT-ZS1NlyJm6bmxQy9l9e_dIosBv80K_xm-ScadAJQBH2yZg9r1KKfJcLphG7w5tk1t-aE1k5nlm38xYHuJGLTbj8sFmscGzJbepy90gQpywQYlTVq1gw";
     let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
     //alert(toneApi);
 
+    let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
+
+    fetch(tokenApi)
+    .then(getResponse)
+    .then(getToken)
+    .then(function(accessToken) {
+        let noQuotesToken = accessToken.substring(1, accessToken.length-1);
+
+        fetch(toneApi, {
+            "body": JSON.stringify(textObj),
+            "headers": {
+                "Authorization": "Bearer ".concat(noQuotesToken),
+                "Content-Type": "application/json"
+            },
+            "method": "POST"
+        })
+        .then(getResponse)
+        .then(getJson)
+        .then(function(jsonData) {
+            console.log("Request succeeded with JSON response", jsonData);
+            analyzedText = getColoredText(cleanedEmailText, jsonData);
+
+            chrome.tabs.query(
+                { active: true, currentWindow: true },
+                function(tabs) {
+                    chrome.tabs.sendMessage(
+                        tabs[0].id,
+                        {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
+                        // ...also specifying a callback to be called
+                        //    from the receiving end (content script)
+                        null
+                    );
+                }
+            );
+        })
+        .catch(function(error) {
+            console.log("Unable to analyze text", error);
+        });
+    })
+    .catch(function(error) {
+        console.log("Unable to get token", error);
+    });
+
+/*
     fetch(toneApi, {
         "body": JSON.stringify(textObj),
         "headers": {
@@ -146,11 +194,11 @@ function setDOMInfo(info) {
                 );
             }
         );
-
     })
     .catch(function(error) {
         console.log("Request failed", error);
     });
+*/
 
     // Chrome Browser does not allow cursor to be placed outside of most
     // recently written to child node, so a 0-width character is used so
