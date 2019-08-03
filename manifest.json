@@ -18,10 +18,12 @@
 
   "page_action": {
     "default_title": "Test Extension",
-    //"default_icon": {
-    //  "19": "img/icon19.png",
-    //  "38": "img/icon38.png"
-    //},
+    "default_icon": {
+      "128": "images/perspectiveIcon128.png",
+      "48": "images/perspectiveIcon48.png",
+      "32": "images/perspectiveIcon32.png",
+      "16": "images/perspectiveIcon16.png"
+    },
     "default_popup": "popup.html"
   },
 
