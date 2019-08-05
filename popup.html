@@ -5,19 +5,24 @@
 	</head>
 
 	<body>	
-		<form id="toneForm">	
-    		<h3>How Do You Want to Sound?</h3>	
-			<input type="checkbox" class="toneCheckbox" id="emotional_anger" name="anger" value="anger"> Angry <br>
-			<input type="checkbox" class="toneCheckbox" id="emotional_fear" name="fear" value="fear"> Fearful <br>
-			<input type="checkbox" class="toneCheckbox" id="emotional_joy" name="joy" value="joy"> Joyful <br>
-			<input type="checkbox" class="toneCheckbox" id="emotional_sadness" name="sadness" value="sadness"> Sad <br>
-			<input type="checkbox" class="toneCheckbox" id="language_analytical" name="analytical" value="analytical"> Analytical <br>
-			<input type="checkbox" class="toneCheckbox" id="language_confident" name="confident" value="confident"> Confident <br>
-			<input type="checkbox" class="toneCheckbox" id="language_tentative" name="tentative" value="tentative"> Tentative <br>		
+		<form id="toneForm">
+            <center>
+    		    <h3>How Do You Feel?</h3>
+            </center>
+			<input type="radio" class="toneCheckbox" id="tone_joy" name="feeling" value="joy" checked="checked"> Joyful </input>
+			<input type="radio" class="toneCheckbox" id="tone_anger" name="feeling" value="angry"> Angry </input> <br>
+
+            <center>
+    		    <h3>How Do You Want to Come Across?</h3>
+            </center>
+			<input type="radio" class="toneCheckbox" id="tone_confident" name="doc_tone" value="confident" checked="checked"> Confident
+			<input type="radio" class="toneCheckbox" id="tone_tentative" name="doc_tone" value="Tentative"> Tentative <br>
 		</form>
 
-		<button id="getTone">Get Perspective</button>
-		<button id="prepareToSend">Clear Highlighting</button>
+        <center>
+		    <button id="prepareToSend">Clear Highlighting</button>
+		    <button id="getTone">Get Perspective</button>
+        </center>
 		<script src="popup.js"></script>
 	</body>	
 </html>
