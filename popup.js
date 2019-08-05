@@ -166,40 +166,6 @@ function setDOMInfo(info) {
         console.log("Unable to get token", error);
     });
 
-/*
-    fetch(toneApi, {
-        "body": JSON.stringify(textObj),
-        "headers": {
-            "Authorization": "Bearer ".concat(accessToken),
-            "Content-Type": "application/json"
-        },
-        "method": "POST"
-    })
-    .then(getResponse)
-    .then(getJson)
-    .then(function(jsonData) {
-        console.log("Request succeeded with JSON response", jsonData);
-        analyzedText = getColoredText(cleanedEmailText, jsonData);
-        alert(analyzedText);
-
-        chrome.tabs.query(
-            { active: true, currentWindow: true },
-            function(tabs) {
-                chrome.tabs.sendMessage(
-                    tabs[0].id,
-                    {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
-                    // ...also specifying a callback to be called
-                    //    from the receiving end (content script)
-                    null
-                );
-            }
-        );
-    })
-    .catch(function(error) {
-        console.log("Request failed", error);
-    });
-*/
-
     // Chrome Browser does not allow cursor to be placed outside of most
     // recently written to child node, so a 0-width character is used so
     // uncolored text can be written following the block of colored text
@@ -209,21 +175,6 @@ function setDOMInfo(info) {
                    cleanedEmailText +
                    '</span>' +
                    '\uFEFF';
-
-    //console.log(analyzedText);
-
-    //chrome.tabs.query(
-    //    { active: true, currentWindow: true },
-    //    function(tabs) {
-    //        chrome.tabs.sendMessage(
-    //            tabs[0].id,
-    //            {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
-    //            // ...also specifying a callback to be called
-    //            //    from the receiving end (content script)
-    //            null
-    //        );
-    //    }
-    //);
 
 }
 
