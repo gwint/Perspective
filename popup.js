@@ -9,26 +9,12 @@ COLOR_CODE = {
     "": "purple"
 };
 
-function removeSpanTags(aStr) {
-    if(aStr == null) {
-        return null;
-    }
-    if(aStr.length == 0) {
-        return "";
-    }
-    strNoSpanTags = "";
-    let i = 0;
-    while(i < aStr.length) {
-        if(aStr[i] === "<") {
-            while(aStr[i] !== ">")
-                i++;
-        }
-        else {
-            strNoSpanTags = strNoSpanTags + aStr[i];
-        }
-        i++;
-    }
-    return strNoSpanTags;
+function extractIndividualSentences(emailBodyHtml) {
+    console.log(emailBodyHtml);
+    return emailBodyHtml.match(/([a-zA-Z]+)([.?!])/g);
+}
+
+function getColoredSentence(sentences, toneData) {
 }
 
 function getResponse(response) {
@@ -62,32 +48,33 @@ function getToken(response) {
 
     @return string
 */
-function getColoredText(text, toneData) {
-    console.log(toneData);
+function getColoredText(sentences, toneData) {
+    console.log(sentences);
     if(!('sentences_tone' in toneData)) {
         dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
         dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
         textColor = COLOR_CODE[dominantTone];
         coloredText = `<span style="background-color:${textColor};">` +
-                      text + '</span>' + '\uFEFF';
+                      sentences.join("") + '</span>' + '\uFEFF';
         return coloredText;
     }
 
     console.log(toneData);
     colorCodedText = "";
-    toneData['sentences_tone'].forEach(
-        function(sentenceToneData) {
-            dominantToneIndex = getDominantTone(sentenceToneData['tones']);
-            sentenceText = sentenceToneData['text'];
-            dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
+    let i = 0;
+    for (; i < sentences.length && i < toneData['sentences_tone'].length; i++) {
+            let sentenceToneData = toneData['sentences_tone'][i];
+            let dominantToneIndex = getDominantTone(sentenceToneData['tones']);
+            let sentenceText = sentences[i];
+            let dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
             console.log(dominantTone);
-            textColor = COLOR_CODE[dominantTone];
-            coloredSentence = `<span style="background-color:${textColor};">` +
+            let textColor = COLOR_CODE[dominantTone];
+            let coloredSentence = `<span style="background-color:${textColor};">` +
                               sentenceText + '</span>' +
-                              '\xa0' + '\xa0' + '\uFEFF';
+                              /*'\xa0' + '\xa0' +*/ '\uFEFF';
             colorCodedText = colorCodedText.concat(coloredSentence);
-        }
-    );
+    }
+    console.log(colorCodedText);
 
     return colorCodedText;
 }
@@ -114,14 +101,10 @@ function getDominantTone(toneScores) {
 // Update the relevant fields with the new data
 function setDOMInfo(info) {
     console.log(info.emailText);
-    text = info.emailText;
 
-    cleanedEmailText = removeSpanTags(text.replace(/[\uFEFF]/g, ""));
-
-    // Make API call and deal with response
-    let textObj = { text: cleanedEmailText };
-    let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
-    //alert(toneApi);
+    let text = info.emailText;
+    let structuredText = info.formattedText.replace(/([\uFEFF])|(<)(\/)*(span)([ a-zA-Z;\-:=\"]*)(\>)/g, "");
+    let cleanedEmailText = text.replace(/[\uFEFF]/g, "");
 
     let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
 
@@ -130,6 +113,8 @@ function setDOMInfo(info) {
     .then(getToken)
     .then(function(accessToken) {
         let noQuotesToken = accessToken.substring(1, accessToken.length-1);
+        let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
+        let textObj = { text: cleanedEmailText };
 
         fetch(toneApi, {
             "body": JSON.stringify(textObj),
@@ -143,7 +128,9 @@ function setDOMInfo(info) {
         .then(getJson)
         .then(function(jsonData) {
             console.log("Request succeeded with JSON response", jsonData);
-            analyzedText = getColoredText(cleanedEmailText, jsonData);
+
+            let structuredSentences = structuredText.match(/([<>/, a-zA-Z]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
+            let analyzedText = getColoredText(structuredSentences, jsonData);
 
             chrome.tabs.query(
                 { active: true, currentWindow: true },
@@ -170,11 +157,6 @@ function setDOMInfo(info) {
     // recently written to child node, so a 0-width character is used so
     // uncolored text can be written following the block of colored text
     // sent from the popup.
-
-    analyzedText = '<span style="background-color:yellow;">' +
-                   cleanedEmailText +
-                   '</span>' +
-                   '\uFEFF';
 
 }
 

@@ -16,16 +16,18 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     // (For your specific requirements `document.querySelectorAll(...)`
     //  should be equivalent to jquery's `$(...)`)
     var domInfo = {
-      total: document.querySelectorAll('*').length,
-      inputs: document.querySelectorAll('input').length,
-      buttons: document.querySelectorAll('button').length,
-      emailText: "test text"
+        total: document.querySelectorAll('*').length,
+        inputs: document.querySelectorAll('input').length,
+        buttons: document.querySelectorAll('button').length,
+        emailText: "test text",
+        formattedText: ""
     };
 
     // Need to strip out span tags so that they don't interfere with
     // what gets sent to tone analyzer
     if(msgBody) {
         domInfo.emailText = msgBody.innerText;
+        domInfo.formattedText = msgBody.innerHTML;
         //alert(domInfo.emailText);
     }
 
