@@ -63,16 +63,15 @@ function getColoredText(sentences, toneData) {
     colorCodedText = "";
     let i = 0;
     for (; i < sentences.length && i < toneData['sentences_tone'].length; i++) {
-            let sentenceToneData = toneData['sentences_tone'][i];
-            let dominantToneIndex = getDominantTone(sentenceToneData['tones']);
-            let sentenceText = sentences[i];
-            let dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
-            console.log(dominantTone);
-            let textColor = COLOR_CODE[dominantTone];
-            let coloredSentence = `<span style="background-color:${textColor};">` +
-                              sentenceText + '</span>' +
-                              /*'\xa0' + '\xa0' +*/ '\uFEFF';
-            colorCodedText = colorCodedText.concat(coloredSentence);
+        let sentenceToneData = toneData['sentences_tone'][i];
+        let dominantToneIndex = getDominantTone(sentenceToneData['tones']);
+        let sentenceText = sentences[i];
+        let dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
+        console.log(dominantTone);
+        let textColor = COLOR_CODE[dominantTone];
+        let coloredSentence = `<span style="background-color:${textColor};">` +
+                              sentenceText + '</span>' + '\uFEFF';
+        colorCodedText = colorCodedText.concat(coloredSentence);
     }
     console.log(colorCodedText);
 
@@ -129,7 +128,7 @@ function setDOMInfo(info) {
         .then(function(jsonData) {
             console.log("Request succeeded with JSON response", jsonData);
 
-            let structuredSentences = structuredText.match(/([<>/, a-zA-Z]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
+            let structuredSentences = structuredText.replace(/(<div>)/g, "<span>").replace(/(<\/div>)/g, "</span>").match(/([<>/, a-zA-Z]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
             let analyzedText = getColoredText(structuredSentences, jsonData);
 
             chrome.tabs.query(
