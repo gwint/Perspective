@@ -28,7 +28,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     if(msgBody) {
         domInfo.emailText = msgBody.innerText;
         domInfo.formattedText = msgBody.innerHTML;
-        //alert(domInfo.emailText);
+        console.log("Here: " + domInfo.formattedText);
+        alert(domInfo.formattedText);
     }
 
     // Directly respond to the sender (popup),
@@ -36,9 +37,32 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     response(domInfo);
   }
   else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
-    if(msgBody) {
-      msgBody.innerHTML = msg.coloredText;
-      console.log("text updated successfully");
-    }
+      if (msgBody) {
+          msgBody.innerHTML = msg.coloredText;
+          let toneNotes = document.getElementsByClassName("toneNote");
+          for (let i = 0; i < toneNotes.length; i++) {
+              console.log("Im in here");
+              toneNotes[i].style.visibility = "hidden";
+              toneNotes[i].style.width = "120px";
+              toneNotes[i].style.backgroundColor = "black";
+              toneNotes[i].style.color = "#fff";
+              toneNotes[i].style.textAlign = "center";
+              toneNotes[i].style.borderRadius = "6px";
+              toneNotes[i].style.position = "absolute";
+              toneNotes[i].style.zIndex = "1";
+          }
+
+          let analyzedTextBuckets = document.getElementsByClassName("analyzedText");
+          for (let i = 0; i < analyzedTextBuckets.length; i++) {
+              console.log("Im in here");
+              analyzedTextBuckets[i].onmouseover = function(event) {
+                  event.currentTarget.nextElementSibling.style.visibility = "visible";
+              };
+              analyzedTextBuckets[i].onmouseout = function(event) {
+                  event.currentTarget.nextElementSibling.style.visibility = "hidden";
+              };
+          }
+          console.log("text updated successfully");
+      }
   }
 });

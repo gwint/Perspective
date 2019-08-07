@@ -9,24 +9,23 @@ COLOR_CODE = {
     "": "purple"
 };
 
+TONE_NOTES = {
+    "anger": "You sound a bit angry here",
+    "joy": "You sound too happy",
+    "confident": "Tone it down a little",
+    "tentative": "Speak up a bit"
+};
+
 function extractIndividualSentences(emailBodyHtml) {
     console.log(emailBodyHtml);
     return emailBodyHtml.match(/([a-zA-Z]+)([.?!])/g);
 }
 
-function getColoredSentence(sentences, toneData) {
-}
-
 function getResponse(response) {
-    //alert("response status: " + response.status);
-    //alert(JSON.stringify(response.text));
     if(response.status >= 200 && response.status < 300) {
-        //alert("valid response");
-        //alert(response);
         return Promise.resolve(response);
     }
     else {
-        //alert("Invalid response: " + JSON.stringify(response));
         return Promise.reject(new Error(response.statusText));
     }
 }
@@ -49,7 +48,6 @@ function getToken(response) {
     @return string
 */
 function getColoredText(sentences, toneData) {
-    console.log(sentences);
     if(!('sentences_tone' in toneData)) {
         dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
         dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
@@ -67,15 +65,19 @@ function getColoredText(sentences, toneData) {
         let dominantToneIndex = getDominantTone(sentenceToneData['tones']);
         let sentenceText = sentences[i];
         let dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
-        console.log(dominantTone);
         let textColor = COLOR_CODE[dominantTone];
-        let coloredSentence = `<span style="background-color:${textColor};">` +
-                              sentenceText + '</span>' + '\uFEFF';
+        let noteText = TONE_NOTES[dominantTone];
+        let coloredSentence = `<span class="analyzedText" style="background-color:${textColor};">` +
+                              sentenceText + '</span>' + `<span class="toneNote">${noteText}</span>` + '\uFEFF';
         colorCodedText = colorCodedText.concat(coloredSentence);
     }
     console.log(colorCodedText);
 
     return colorCodedText;
+}
+
+function replaceDivs(htmlStr) {
+    return htmlStr.replace(/(<div>)/g, '<span style="display:block;">').replace(/(<\/div>)/g, "</span>");
 }
 
 function getDominantTone(toneScores) {
@@ -126,9 +128,11 @@ function setDOMInfo(info) {
         .then(getResponse)
         .then(getJson)
         .then(function(jsonData) {
-            console.log("Request succeeded with JSON response", jsonData);
-
-            let structuredSentences = structuredText.replace(/(<div>)/g, "<span>").replace(/(<\/div>)/g, "</span>").match(/([<>/, a-zA-Z]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
+            console.log("Structured text: " + structuredText);
+            let textWithoutDivs = replaceDivs(structuredText);
+            console.log("Text without divs: " + textWithoutDivs);
+            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
+            console.log("Structured sentences: " + structuredSentences);
             let analyzedText = getColoredText(structuredSentences, jsonData);
 
             chrome.tabs.query(
