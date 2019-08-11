@@ -13,9 +13,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
   msgBody = document.querySelector('div[aria-label="Message Body"]');
   if((msg.from === 'popup') && (msg.subject === 'DOMInfo')) {
     // Collect the necessary data
-    // (For your specific requirements `document.querySelectorAll(...)`
-    //  should be equivalent to jquery's `$(...)`)
-    var domInfo = {
+    let domInfo = {
         total: document.querySelectorAll('*').length,
         inputs: document.querySelectorAll('input').length,
         buttons: document.querySelectorAll('button').length,
@@ -39,9 +37,10 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
   else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
       if (msgBody) {
           msgBody.innerHTML = msg.coloredText;
+          console.log("Resulting html: " + msg.coloredText);
+
           let toneNotes = document.getElementsByClassName("toneNote");
           for (let i = 0; i < toneNotes.length; i++) {
-              console.log("Im in here");
               toneNotes[i].style.visibility = "hidden";
               toneNotes[i].style.width = "120px";
               toneNotes[i].style.backgroundColor = "black";
@@ -62,7 +61,20 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
                   event.currentTarget.nextElementSibling.style.visibility = "hidden";
               };
           }
+
+          let divReplacements = document.getElementsByClassName("rp");
+          for (let i = 0; i < divReplacements; i++) {
+              divReplacements[i].style.display = "block";
+          }
           console.log("text updated successfully");
       }
+  }
+  else if((msg.from === "popup") && (msg.subject === "cleanText")) {
+    msgBody = document.querySelector('div[aria-label="Message Body"]');
+    let domInfo = {
+        formattedText: msgBody.innerHTML,
+        rawText: msgBody.innerText
+    };
+    response(domInfo);
   }
 });

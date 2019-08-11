@@ -1,12 +1,8 @@
 COLOR_CODE = {
     "anger": "red",
-    "sadness": "blue",
-    "fear": "grey",
     "joy": "yellow",
-    "analytical": "yellow",
-    "confident": "yellow",
-    "tentative": "yellow",
-    "": "purple"
+    "confident": "blue",
+    "tentative": "grey",
 };
 
 TONE_NOTES = {
@@ -48,16 +44,24 @@ function getToken(response) {
     @return string
 */
 function getColoredText(sentences, toneData) {
+    console.log(toneData);
+    // Chrome Browser does not allow cursor to be placed outside of most
+    // recently written to child node, so a 0-width character is used so
+    // uncolored text can be written following the block of colored text
+    // sent from the popup.
+
     if(!('sentences_tone' in toneData)) {
-        dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
-        dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
-        textColor = COLOR_CODE[dominantTone];
-        coloredText = `<span style="background-color:${textColor};">` +
-                      sentences.join("") + '</span>' + '\uFEFF';
-        return coloredText;
+        let dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
+        let dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
+        let textColor = COLOR_CODE[dominantTone];
+        let noteText = TONE_NOTES[dominantTone];
+        let coloredSentence = `<span class="analyzedText" style="background-color:${textColor};">` +
+                              sentences.join("") + '</span>' +
+                              `<span class="toneNote">${noteText}</span>` + '\uFEFF';
+        console.log("Single Case HTML string: " + coloredSentence);
+        return coloredSentence;
     }
 
-    console.log(toneData);
     colorCodedText = "";
     let i = 0;
     for (; i < sentences.length && i < toneData['sentences_tone'].length; i++) {
@@ -68,7 +72,8 @@ function getColoredText(sentences, toneData) {
         let textColor = COLOR_CODE[dominantTone];
         let noteText = TONE_NOTES[dominantTone];
         let coloredSentence = `<span class="analyzedText" style="background-color:${textColor};">` +
-                              sentenceText + '</span>' + `<span class="toneNote">${noteText}</span>` + '\uFEFF';
+                              sentenceText + '</span>' +
+                              `<span class="toneNote">${noteText}</span>` + '\uFEFF';
         colorCodedText = colorCodedText.concat(coloredSentence);
     }
     console.log(colorCodedText);
@@ -77,7 +82,93 @@ function getColoredText(sentences, toneData) {
 }
 
 function replaceDivs(htmlStr) {
-    return htmlStr.replace(/(<div>)/g, '<span style="display:block;">').replace(/(<\/div>)/g, "</span>");
+    return htmlStr.replace(/(<div\>)/g, '<span>')
+                  .replace(/(<\/div\>)/g, '</span>')
+                  .replace(/<span\><br\><\/span\>/g, '<p></p>');
+}
+
+function removeHighlighting(info) {
+    console.log(info);
+    // Line breaks go from <p></p> to <div><br></div>
+    let htmlStr = info.formattedText;
+    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<p\><\/p\>)/g, '<div><br></div>');
+    console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
+    // Remove tone notes
+    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z \"\(\)]+)(<\/span\>))/g, "");
+    console.log("Without tone notes: " + htmlStrWithoutToneNotes);
+    // spans go back to being divs
+    let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\>)/g, '<div>')
+                                                     .replace(/(<\/span\>)/g, '</div>');
+    console.log("With div tags instead of spans: " + htmlStrWithoutSpans);
+    let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
+    console.log("Without opening of span wrappers: " + htmlStrWithoutWrapperOpening);
+    // Remove classes and styles
+    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9;,:\-=!?\" ]+)/g);
+    console.log("Tokens: " + tokens);
+    let stack = [];
+    let validTokens = [];
+    let isTag = function(possibleTag) {
+        console.log("Possible Tag: " + possibleTag);
+
+        return possibleTag.length > 1 &&
+               info.rawText.indexOf(possibleTag) === -1 &&
+               possibleTag[0] === '<' &&
+               possibleTag[possibleTag.length-1] == '>';
+    };
+    let getTagText = function(tag) {
+        let start = 1;
+        if(tag[1] === '/') {
+            start = 2;
+        }
+        return tag.substring(start, tag.length-2);
+    };
+    tokens.forEach(function(token) {
+        if(token === '<br>') {
+            validTokens.push(token);
+        }
+        else if(isTag(token)) {
+            console.log("Tag Found: " + token);
+            if(token[1] === '/') {
+                console.log("Closing Tag Found: " + token);
+                // Check for corresponding opening tag on top of stack
+                // If opening tag is there, then closing tag goes to valid
+                //      token list
+                if(stack.length > 0) {
+                    let mostNestedOpener = stack.pop();
+                    console.log(`Comparing ${getTagText(token)} and ${getTagText(mostNestedOpener)}`);
+                    if(getTagText(token) === getTagText(mostNestedOpener)) {
+                        validTokens.push(token);
+                    }
+                }
+                else {
+                    console.log("Tag Unmatched and Ignored");
+                }
+            }
+            else {
+                validTokens.push(token);
+                stack.push(token);
+            }
+        }
+        else {
+            validTokens.push(token);
+        }
+    });
+
+    console.log("Valid Tokens: " + validTokens);
+    let cleanedHTMLString = validTokens.join("");
+
+    chrome.tabs.query(
+        { active: true, currentWindow: true },
+        function(tabs) {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: validTokens.join("")},
+                // ...also specifying a callback to be called
+                //    from the receiving end (content script)
+                null
+            );
+        }
+    );
 }
 
 function getDominantTone(toneScores) {
@@ -155,12 +246,24 @@ function setDOMInfo(info) {
     .catch(function(error) {
         console.log("Unable to get token", error);
     });
+}
 
-    // Chrome Browser does not allow cursor to be placed outside of most
-    // recently written to child node, so a 0-width character is used so
-    // uncolored text can be written following the block of colored text
-    // sent from the popup.
-
+function getEmailTextAndClean() {
+  console.log("message sent from popup to content script");
+  chrome.tabs.query({
+      active: true,
+      currentWindow: true
+    },
+    function(tabs) {
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { from: 'popup', subject: 'cleanText' },
+        // ...also specifying a callback to be called
+        //    from the receiving end (content script)
+        removeHighlighting
+      );
+    }
+  )
 }
 
 function getEmailTextAndAnalyze() {
@@ -195,16 +298,6 @@ window.addEventListener('DOMContentLoaded', function () {
     },
     function (tabs) {
         document.getElementById("getTone").onclick = getEmailTextAndAnalyze;
-        //while(1) {
-        // ...and send a request for the DOM info...
-        //  console.log("message sent from popup to content script");
-        //  chrome.tabs.sendMessage(
-        //      tabs[0].id,
-        //      {from: 'popup', subject: 'DOMInfo'},
-            // ...also specifying a callback to be called
-            //    from the receiving end (content script)
-        //      setDOMInfo);
-        //  await sleep(7000);
-        //}
+        document.getElementById("stripHighlighting").onclick = getEmailTextAndClean;
     });
 });
