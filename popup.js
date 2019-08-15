@@ -3,13 +3,17 @@ COLOR_CODE = {
     "joy": "yellow",
     "confident": "blue",
     "tentative": "grey",
+    "sad": "brown",
+    "analytical": "YellowGreen"
 };
 
 TONE_NOTES = {
     "anger": "You sound a bit angry here",
-    "joy": "You sound too happy",
-    "confident": "Tone it down a little",
-    "tentative": "Speak up a bit"
+    "joy": "Someone's happy",
+    "confident": "Yesssssss!, point, blank, periodt!",
+    "tentative": "Speak up a bit",
+    "sad": "Sounding a bit down there",
+    "analytical": "Way to think it through!"
 };
 
 function extractIndividualSentences(emailBodyHtml) {
@@ -94,7 +98,7 @@ function removeHighlighting(info) {
     let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<p\><\/p\>)/g, '<div><br></div>');
     console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
     // Remove tone notes
-    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z \"\(\)]+)(<\/span\>))/g, "");
+    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' \"\(\)]+)(<\/span\>))/g, "");
     console.log("Without tone notes: " + htmlStrWithoutToneNotes);
     // spans go back to being divs
     let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\>)/g, '<div>')
@@ -103,7 +107,7 @@ function removeHighlighting(info) {
     let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
     console.log("Without opening of span wrappers: " + htmlStrWithoutWrapperOpening);
     // Remove classes and styles
-    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9;,:\-=!?\" ]+)/g);
+    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9&;,:\-=!?\" ]+)/g);
     console.log("Tokens: " + tokens);
     let stack = [];
     let validTokens = [];
@@ -222,7 +226,7 @@ function setDOMInfo(info) {
             console.log("Structured text: " + structuredText);
             let textWithoutDivs = replaceDivs(structuredText);
             console.log("Text without divs: " + textWithoutDivs);
-            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
+            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
             console.log("Structured sentences: " + structuredSentences);
             let analyzedText = getColoredText(structuredSentences, jsonData);
 
