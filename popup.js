@@ -102,9 +102,10 @@ function getColoredText(sentences, toneData) {
 /**
  */
 function replaceDivs(htmlStr) {
-    return htmlStr.replace(/(<div\>)/g, '<span>')
-                  .replace(/(<\/div\>)/g, '</span>')
-                  .replace(/<span\><br\><\/span\>/g, '<p></p>');
+    return htmlStr.replace(/<div\><br\><\/div\>/g, '<span><br></span>')
+                  .replace(/(<div\>)/g, '<span><br>')
+                  .replace(/(<\/div\>)/g, '</span>');
+                  //.replace(/<span\><br\><\/span\>/g, '<span><br><br></span>');
 }
 
 /**
@@ -113,14 +114,15 @@ function removeHighlighting(info) {
     console.log(info);
     // Line breaks go from <p></p> to <div><br></div>
     let htmlStr = info.formattedText;
-    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<p\><\/p\>)/g, '<div><br></div>');
+//    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<p\><\/p\>)/g, '<div><br></div>');
+    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<span\><br\><\/span\>)/g, '<div><br></div>');
     console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
     // Remove tone notes
     let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(
 /((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' !\"\(\)]+)(<\/span\>))/g, "");
     console.log("Without tone notes: " + htmlStrWithoutToneNotes);
     // spans go back to being divs
-    let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\>)/g, '<div>')
+    let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\><br\>)/g, '<div>')
                                                      .replace(/(<\/span\>)/g, '</div>');
     console.log("With div tags instead of spans: " + htmlStrWithoutSpans);
     let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
@@ -221,7 +223,8 @@ function setDOMInfo(info) {
 
     let text = info.emailText;
     let structuredText = info.formattedText.replace(/([\uFEFF])|(<)(\/)*(span)([ a-zA-Z;\-:=\"]*)(\>)/g, "");
-    let cleanedEmailText = text.replace(/[\uFEFF]/g, "");
+    let cleanedEmailText = text.replace(/[\uFEFF]/g, "").replace(/\n/g, " ");
+    console.log("Email Text Passed to Analyzer: " + cleanedEmailText);
 
     let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
 
@@ -247,7 +250,7 @@ function setDOMInfo(info) {
             console.log("Structured text: " + structuredText);
             let textWithoutDivs = replaceDivs(structuredText);
             console.log("Text without divs: " + textWithoutDivs);
-            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!]((<\/)([a-zA-Z]+)(\>))*|($))/g);
+            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
             console.log("Structured sentences: " + structuredSentences);
             let analyzedText = getColoredText(structuredSentences, jsonData);
 
