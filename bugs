@@ -1,0 +1,2 @@
+1) New token not needed for every request
+2) "I   hate   you!" returns "nbsp; you!﻿" as the highlighted text.

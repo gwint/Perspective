@@ -116,8 +116,7 @@ function removeHighlighting(info) {
     let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<p\><\/p\>)/g, '<div><br></div>');
     console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
     // Remove tone notes
-    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(
-/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' !\"\(\)]+)(<\/span\>))/g, "");
+    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' \"\(\)]+)(<\/span\>))/g, "");
     console.log("Without tone notes: " + htmlStrWithoutToneNotes);
     // spans go back to being divs
     let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\>)/g, '<div>')
@@ -126,7 +125,8 @@ function removeHighlighting(info) {
     let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
     console.log("Without opening of span wrappers: " + htmlStrWithoutWrapperOpening);
     // Remove classes and styles
-    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9&;,:\-=!?.\" ]+)/g);
+    let tokens = htmlStrWithoutWrapperOpening.match(
+/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9&;,:\-=!?\" ]+)/g);
     console.log("Tokens: " + tokens);
     let stack = [];
     let validTokens = [];

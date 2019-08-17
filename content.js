@@ -26,7 +26,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
     if(msgBody) {
         domInfo.emailText = msgBody.innerText;
         domInfo.formattedText = msgBody.innerHTML;
-        console.log("Here: " + domInfo.formattedText);
+        console.log("Formatted Email Text: " + domInfo.formattedText);
+        console.log("Unformatted Email Text: " + domInfo.emailText);
         alert(domInfo.formattedText);
     }
 
