@@ -72,10 +72,13 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
   }
   else if((msg.from === "popup") && (msg.subject === "cleanText")) {
     msgBody = document.querySelector('div[aria-label="Message Body"]');
+    alert("innerText: " + msgBody.innerText);
+    alert("innertHTML: " + msgBody.innerHTML);
     let domInfo = {
-        formattedText: msgBody.innerHTML,
-        rawText: msgBody.innerText
+        textWithoutMarkup: msgBody.innerText,
+        textWithMarkup: msgBody.innerHTML
     };
+
     response(domInfo);
   }
 });

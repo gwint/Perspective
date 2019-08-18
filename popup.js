@@ -17,6 +17,14 @@ TONE_NOTES = {
 };
 
 /**
+ * Breaks string representing email body text into sentences where each
+ * sentence contains any markup providing structure to that part of the email.
+ *
+ * @param string emailBodyHtml A string containing the html representing the
+ *                             body of an email.
+ * @return string[] An array of string representing the sentences comprising
+ *                  the body of an email (the html providing the email's
+ *                  structure is included with the appropiate sentence)
  */
 function extractIndividualSentences(emailBodyHtml) {
     console.log(emailBodyHtml);
@@ -24,8 +32,14 @@ function extractIndividualSentences(emailBodyHtml) {
 }
 
 /**
+ * Returns a promise that contains the body of an http response.
+ *
+ * @param Promise response A promise controlling how an http response body
+ *                         will be handled.
+ * @return Promise A Promise that is either resolved or rejected depending on
+ *                 the http response code.
  */
-function getResponse(response) {
+function getResponseBody(response) {
     if(response.status >= 200 && response.status < 300) {
         return Promise.resolve(response);
     }
@@ -35,26 +49,38 @@ function getResponse(response) {
 }
 
 /**
+ * Returns a Promise containing the JSON body of an http response.
+ *
+ * @param Promise responseBody A promise containing the body of an http response.
+ * @return Promise A Promise that can be used to retrieve the JSON object
+ *                 of a http response body.
  */
-function getJson(response) {
-    return response.json();
+function getJsonPayload(responseBody) {
+    return responseBody.json();
 }
 
 /**
+ * Returns a Promise containing the string form of the body of an http response.
+ *
+ * @param  Promise responseBody A promise containing the body of an http response.
+ * @return Promise A Promise that can be used to retrieve the body of a http
+ *                 response as a string.
  */
-function getToken(response) {
-    return response.text();
+function getAuthenticationToken(responseBody) {
+    return responseBody.text();
 }
 
-/*
-    Returns color-coded version of text where the color is dependant on the
-    tone of each sentence.
-
-    @param {string} text
-    @parm {object} toneData
-
-    @return string
-*/
+/**
+ *   Returns color-coded version of text where the color is dependant on the
+ *   tone of each sentence.
+ *
+ *   @param string[] setences
+ *   @param object toneData An object containing the tone analysis of the text
+ *                          of the email's body.
+ *   @return string An html string representing the text of the body of the
+ *                  email with highlighting applied on a per-sentence basis
+ *                  based on the tone of each sentence.
+ */
 function getColoredText(sentences, toneData) {
     console.log(toneData);
     // Chrome Browser does not allow cursor to be placed outside of most
@@ -100,46 +126,53 @@ function getColoredText(sentences, toneData) {
 }
 
 /**
+ * Returns version of an html string where all opening div tags have been
+ * replaced with a span tag immediately followed by a line break tag and
+ * closing div tags have been replaced with closing span tag.
+ *
+ * @param string htmlStr An html string.
+ * @return string htmlStr, but with all occurrences of opening div tags
+ *                replaced with opening span tags immediately followed by
+ *                line break tags and all closing div tags are replaced by
+ *                closing span tags.
  */
 function replaceDivs(htmlStr) {
     return htmlStr.replace(/<div\><br\><\/div\>/g, '<span><br></span>')
                   .replace(/(<div\>)/g, '<span><br>')
                   .replace(/(<\/div\>)/g, '</span>');
-                  //.replace(/<span\><br\><\/span\>/g, '<span><br><br></span>');
 }
 
 /**
+ * Returns true if possibleTag has the form of an html tag element and does
+ * not appear in a string with markup removed.
+ *
+ * @param string possibleTag         A possible html tag.
+ * @param string stringWithoutMarkup Non-html string connected associated with
+ *                                   html string that house possibleTag.
+ * @return true if possibleTag has the form of a tag and does not appear in
+ *         stringWithoutMarkup, false otherwise.
  */
-function removeHighlighting(info) {
-    console.log(info);
-    // Line breaks go from <p></p> to <div><br></div>
-    let htmlStr = info.formattedText;
-//    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<p\><\/p\>)/g, '<div><br></div>');
-    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<span\><br\><\/span\>)/g, '<div><br></div>');
-    console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
-    // Remove tone notes
-    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(
-/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' !\"\(\)]+)(<\/span\>))/g, "");
-    console.log("Without tone notes: " + htmlStrWithoutToneNotes);
-    // spans go back to being divs
-    let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\><br\>)/g, '<div>')
-                                                     .replace(/(<\/span\>)/g, '</div>');
-    console.log("With div tags instead of spans: " + htmlStrWithoutSpans);
-    let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
-    console.log("Without opening of span wrappers: " + htmlStrWithoutWrapperOpening);
-    // Remove classes and styles
-    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9&;,:\-=!?.\" ]+)/g);
-    console.log("Tokens: " + tokens);
-    let stack = [];
-    let validTokens = [];
-    let isTag = function(possibleTag) {
-        console.log("Possible Tag: " + possibleTag);
+function isTag(possibleTag, stringWithoutMarkup) {
+    console.log("Possible Tag: " + possibleTag);
+    console.log("Markup string in isTag: " + stringWithMarkup);
+    return possibleTag.length > 1 &&
+           stringWithoutMarkup.indexOf(possibleTag) === -1 &&
+           possibleTag[0] === '<' &&
+           possibleTag[possibleTag.length-1] == '>';
+}
 
-        return possibleTag.length > 1 &&
-               info.rawText.indexOf(possibleTag) === -1 &&
-               possibleTag[0] === '<' &&
-               possibleTag[possibleTag.length-1] == '>';
-    };
+/**
+ * Returns array containing only sentences and balanced pairs of html tags.
+ *
+ * @param string[] tokens                      An array of sentences and tags.
+ * @param string   originalStringWithoutMarkup All text from html string from
+ *                                             which the tokens came.
+ * @return string[] An array containing only balanced pairs of html tags.
+ */
+function getValidTokens(tokens, originalStringWithoutMarkup) {
+    let validTokens = [];
+    let stack = [];
+
     let getTagText = function(tag) {
         let start = 1;
         if(tag[1] === '/') {
@@ -147,11 +180,14 @@ function removeHighlighting(info) {
         }
         return tag.substring(start, tag.length-2);
     };
-    tokens.forEach(function(token) {
+
+    console.log("string to be passed to isTag before: " + originalStringWithoutMarkup);
+    for(let i = 0; i < tokens.length; i++) {
+        let token = tokens[i];
         if(token === '<br>') {
             validTokens.push(token);
         }
-        else if(isTag(token)) {
+        else if(isTag(token, originalStringWithoutMarkup)) {
             console.log("Tag Found: " + token);
             if(token[1] === '/') {
                 console.log("Closing Tag Found: " + token);
@@ -177,7 +213,44 @@ function removeHighlighting(info) {
         else {
             validTokens.push(token);
         }
-    });
+    }
+
+    return validTokens;
+}
+
+
+
+/**
+ * Sends message to content script containing a version of the an html string
+ * where span tags used for text highlighting have been removed.
+ *
+ * @param object domInfo An object containing innerText and innerHTML of the
+ *                       text area of email body.
+ * @return None.
+ */
+function removeHighlighting(domInfo) {
+    // Line breaks go from <p></p> to <div><br></div>
+    let textWithMarkup = domInfo.textWithMarkup;
+    let textWithoutMarkup = domInfo.textWithoutMarkup;
+
+    let htmlStr = textWithMarkup;
+    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<span\><br\><\/span\>)/g, '<div><br></div>');
+    console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
+    // Remove tone notes
+    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' !\"\(\)]+)(<\/span\>))/g, "");
+    console.log("Without tone notes: " + htmlStrWithoutToneNotes);
+    // spans go back to being divs
+    let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\><br\>)/g, '<div>')
+                                                     .replace(/(<\/span\>)/g, '</div>');
+    console.log("With div tags instead of spans: " + htmlStrWithoutSpans);
+    let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
+    console.log("Without opening of span wrappers: " + htmlStrWithoutWrapperOpening);
+    // Remove classes and styles
+    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9&;,:\-=!?.\" ]+)/g);
+    console.log("Tokens: " + tokens);
+    let stack = [];
+    console.log("Text without markup to pass to getValidTokens: " + textWithoutMarkup);
+    let validTokens = getValidTokens(tokens, textWithoutMarkup);
 
     console.log("Valid Tokens: " + validTokens);
     let cleanedHTMLString = validTokens.join("");
@@ -188,8 +261,6 @@ function removeHighlighting(info) {
             chrome.tabs.sendMessage(
                 tabs[0].id,
                 {from: 'popup', subject: 'EmailBodyUpdate', coloredText: validTokens.join("")},
-                // ...also specifying a callback to be called
-                //    from the receiving end (content script)
                 null
             );
         }
@@ -197,6 +268,13 @@ function removeHighlighting(info) {
 }
 
 /**
+ * Return index of tone with highest score from an array of tone scores.
+ *
+ * @param object[] toneScores An array of tone score objects containing
+ *                            information about each tone including score,
+ *                            id, and human-readable name.
+ * @return integer An integer representing the index of the tone with the
+ *                 highest score out of all tones contained in toneScores.
  */
 function getDominantTone(toneScores) {
     if(toneScores.length == 0) {
@@ -217,7 +295,15 @@ function getDominantTone(toneScores) {
 }
 
 
-// Update the relevant fields with the new data
+/**
+ * Use IBM Watson Tone Analyzer API to analyze text from email body, highlight
+ * each sentence based on its tone, and then send this highlighted html string
+ * to the content script so that the email body can be updated.
+ *
+ * @param object info An object containing both innerText and innerHTML of
+ *                    email body text area.
+ * @return None.
+ */
 function setDOMInfo(info) {
     console.log(info.emailText);
 
@@ -229,8 +315,8 @@ function setDOMInfo(info) {
     let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
 
     fetch(tokenApi)
-    .then(getResponse)
-    .then(getToken)
+    .then(getResponseBody)
+    .then(getAuthenticationToken)
     .then(function(accessToken) {
         let noQuotesToken = accessToken.substring(1, accessToken.length-1);
         let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
@@ -244,8 +330,8 @@ function setDOMInfo(info) {
             },
             "method": "POST"
         })
-        .then(getResponse)
-        .then(getJson)
+        .then(getResponseBody)
+        .then(getJsonPayload)
         .then(function(jsonData) {
             console.log("Structured text: " + structuredText);
             let textWithoutDivs = replaceDivs(structuredText);
@@ -260,8 +346,6 @@ function setDOMInfo(info) {
                     chrome.tabs.sendMessage(
                         tabs[0].id,
                         {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
-                        // ...also specifying a callback to be called
-                        //    from the receiving end (content script)
                         null
                     );
                 }
@@ -276,6 +360,12 @@ function setDOMInfo(info) {
     });
 }
 
+/**
+ * Sends a "cleanText" message to the content script to remove highlighting
+ * from the email body text area.
+ *
+ * @return None.
+ */
 function getEmailTextAndClean() {
   console.log("message sent from popup to content script");
   chrome.tabs.query({
@@ -294,6 +384,12 @@ function getEmailTextAndClean() {
   )
 }
 
+/**
+ * Sends a "DOMInfo" message to the content script so that the email text
+ * can be analyzed and highlighted according to the tone of each sentence.
+ *
+ * @return None.
+ */
 function getEmailTextAndAnalyze() {
   console.log("message sent from popup to content script");
   chrome.tabs.query({
@@ -304,20 +400,12 @@ function getEmailTextAndAnalyze() {
       chrome.tabs.sendMessage(
         tabs[0].id,
         {from: 'popup', subject: 'DOMInfo'},
-        // ...also specifying a callback to be called
-        //    from the receiving end (content script)
         setDOMInfo
       );
     }
   )
 }
 
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Once the DOM is ready...
 window.addEventListener('DOMContentLoaded', function () {
     // ...query for the active tab...
     chrome.tabs.query({
