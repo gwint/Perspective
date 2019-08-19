@@ -143,84 +143,6 @@ function replaceDivs(htmlStr) {
 }
 
 /**
- * Returns true if possibleTag has the form of an html tag element and does
- * not appear in a string with markup removed.
- *
- * @param string possibleTag         A possible html tag.
- * @param string stringWithoutMarkup Non-html string connected associated with
- *                                   html string that house possibleTag.
- * @return true if possibleTag has the form of a tag and does not appear in
- *         stringWithoutMarkup, false otherwise.
- */
-function isTag(possibleTag, stringWithoutMarkup) {
-    console.log("Possible Tag: " + possibleTag);
-    console.log("Markup string in isTag: " + stringWithMarkup);
-    return possibleTag.length > 1 &&
-           stringWithoutMarkup.indexOf(possibleTag) === -1 &&
-           possibleTag[0] === '<' &&
-           possibleTag[possibleTag.length-1] == '>';
-}
-
-/**
- * Returns array containing only sentences and balanced pairs of html tags.
- *
- * @param string[] tokens                      An array of sentences and tags.
- * @param string   originalStringWithoutMarkup All text from html string from
- *                                             which the tokens came.
- * @return string[] An array containing only balanced pairs of html tags.
- */
-function getValidTokens(tokens, originalStringWithoutMarkup) {
-    let validTokens = [];
-    let stack = [];
-
-    let getTagText = function(tag) {
-        let start = 1;
-        if(tag[1] === '/') {
-            start = 2;
-        }
-        return tag.substring(start, tag.length-2);
-    };
-
-    console.log("string to be passed to isTag before: " + originalStringWithoutMarkup);
-    for(let i = 0; i < tokens.length; i++) {
-        let token = tokens[i];
-        if(token === '<br>') {
-            validTokens.push(token);
-        }
-        else if(isTag(token, originalStringWithoutMarkup)) {
-            console.log("Tag Found: " + token);
-            if(token[1] === '/') {
-                console.log("Closing Tag Found: " + token);
-                // Check for corresponding opening tag on top of stack
-                // If opening tag is there, then closing tag goes to valid
-                //      token list
-                if(stack.length > 0) {
-                    let mostNestedOpener = stack.pop();
-                    console.log(`Comparing ${getTagText(token)} and ${getTagText(mostNestedOpener)}`);
-                    if(getTagText(token) === getTagText(mostNestedOpener)) {
-                        validTokens.push(token);
-                    }
-                }
-                else {
-                    console.log("Tag Unmatched and Ignored");
-                }
-            }
-            else {
-                validTokens.push(token);
-                stack.push(token);
-            }
-        }
-        else {
-            validTokens.push(token);
-        }
-    }
-
-    return validTokens;
-}
-
-
-
-/**
  * Sends message to content script containing a version of the an html string
  * where span tags used for text highlighting have been removed.
  *
@@ -229,42 +151,19 @@ function getValidTokens(tokens, originalStringWithoutMarkup) {
  * @return None.
  */
 function removeHighlighting(domInfo) {
-    // Line breaks go from <p></p> to <div><br></div>
-    let textWithMarkup = domInfo.textWithMarkup;
-    let textWithoutMarkup = domInfo.textWithoutMarkup;
-
-    let htmlStr = textWithMarkup;
-    let htmlStrWithOriginalLineBreaks = htmlStr.replace(/(<span\><br\><\/span\>)/g, '<div><br></div>');
-    console.log("With original line breaks: " + htmlStrWithOriginalLineBreaks);
-    // Remove tone notes
-    let htmlStrWithoutToneNotes = htmlStrWithOriginalLineBreaks.replace(/((<span class=\"toneNote\"([a-zA-Z\" ;=\-\(\),:0-9])*\>)([a-zA-Z\' !\"\(\)]+)(<\/span\>))/g, "");
-    console.log("Without tone notes: " + htmlStrWithoutToneNotes);
-    // spans go back to being divs
-    let htmlStrWithoutSpans = htmlStrWithoutToneNotes.replace(/(<span\><br\>)/g, '<div>')
-                                                     .replace(/(<\/span\>)/g, '</div>');
-    console.log("With div tags instead of spans: " + htmlStrWithoutSpans);
-    let htmlStrWithoutWrapperOpening = htmlStrWithoutSpans.replace(/((<span class=\"analyzedText\")([ a-zA-Z0-9;,\":\-=]+)(\>))/g, "");
-    console.log("Without opening of span wrappers: " + htmlStrWithoutWrapperOpening);
-    // Remove classes and styles
-    let tokens = htmlStrWithoutWrapperOpening.match(/(((<)|(<\/))([a-zA-Z]+)(\>))|([a-zA-Z0-9&;,:\-=!?.\" ]+)/g);
-    console.log("Tokens: " + tokens);
-    let stack = [];
-    console.log("Text without markup to pass to getValidTokens: " + textWithoutMarkup);
-    let validTokens = getValidTokens(tokens, textWithoutMarkup);
-
-    console.log("Valid Tokens: " + validTokens);
-    let cleanedHTMLString = validTokens.join("");
-
-    chrome.tabs.query(
-        { active: true, currentWindow: true },
-        function(tabs) {
-            chrome.tabs.sendMessage(
-                tabs[0].id,
-                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: validTokens.join("")},
-                null
-            );
-        }
-    );
+    chrome.storage.sync.get(['originalHtml'], function(result) {
+        console.log('Value currently is ' + result.key);
+        chrome.tabs.query(
+            { active: true, currentWindow: true },
+            function(tabs) {
+                chrome.tabs.sendMessage(
+                    tabs[0].id,
+                    {from: 'popup', subject: 'EmailBodyUpdate', coloredText: result.originalHtml },
+                    null
+                );
+            }
+        );
+    });
 }
 
 /**
@@ -304,11 +203,11 @@ function getDominantTone(toneScores) {
  *                    email body text area.
  * @return None.
  */
-function setDOMInfo(info) {
+function analyzeEmailText(info) {
     console.log(info.emailText);
 
-    let text = info.emailText;
-    let structuredText = info.formattedText.replace(/([\uFEFF])|(<)(\/)*(span)([ a-zA-Z;\-:=\"]*)(\>)/g, "");
+    let text = info.textWithoutMarkup;
+    let structuredText = info.textWithMarkup.replace(/([\uFEFF])|(<)(\/)*(span)([ a-zA-Z;\-:=\"]*)(\>)/g, "");
     let cleanedEmailText = text.replace(/[\uFEFF]/g, "").replace(/\n/g, " ");
     console.log("Email Text Passed to Analyzer: " + cleanedEmailText);
 
@@ -321,6 +220,9 @@ function setDOMInfo(info) {
         let noQuotesToken = accessToken.substring(1, accessToken.length-1);
         let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
         let textObj = { text: cleanedEmailText };
+
+        // Store orignal html string for later restoration
+        chrome.storage.sync.set({originalHtml: info.formattedText}, null);
 
         fetch(toneApi, {
             "body": JSON.stringify(textObj),
@@ -399,8 +301,8 @@ function getEmailTextAndAnalyze() {
     function(tabs) {
       chrome.tabs.sendMessage(
         tabs[0].id,
-        {from: 'popup', subject: 'DOMInfo'},
-        setDOMInfo
+        {from: 'popup', subject: 'analyzeTone'},
+        analyzeEmailText
       );
     }
   )

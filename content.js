@@ -6,33 +6,22 @@ chrome.runtime.sendMessage({
 });
 
 // Listen for messages from the popup
-chrome.runtime.onMessage.addListener(function (msg, sender, response) {
+chrome.runtime.onMessage.addListener(function(msg, sender, response) {
   // First, validate the message's structure
   console.log("message recieved at content script");
   console.log(msg);
   msgBody = document.querySelector('div[aria-label="Message Body"]');
-  if((msg.from === 'popup') && (msg.subject === 'DOMInfo')) {
-    // Collect the necessary data
-    let domInfo = {
-        total: document.querySelectorAll('*').length,
-        inputs: document.querySelectorAll('input').length,
-        buttons: document.querySelectorAll('button').length,
-        emailText: "test text",
-        formattedText: ""
-    };
+  if((msg.from === 'popup') && (msg.subject === 'analyzeTone')) {
 
-    // Need to strip out span tags so that they don't interfere with
-    // what gets sent to tone analyzer
-    if(msgBody) {
-        domInfo.emailText = msgBody.innerText;
-        domInfo.formattedText = msgBody.innerHTML;
-        console.log("Formatted Email Text: " + domInfo.formattedText);
-        console.log("Unformatted Email Text: " + domInfo.emailText);
-        alert(domInfo.formattedText);
+    if(msgBody === null) {
+        throw new Error("Unable to locate DOM element used for email body");
     }
 
-    // Directly respond to the sender (popup),
-    // through the specified callback */
+    let domInfo = {
+        textWithoutMarkup: msgBody.innerText,
+        textWithMarkup: msgBody.innerHTML
+    };
+
     response(domInfo);
   }
   else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
@@ -54,7 +43,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
 
           let analyzedTextBuckets = document.getElementsByClassName("analyzedText");
           for (let i = 0; i < analyzedTextBuckets.length; i++) {
-              console.log("Im in here");
               analyzedTextBuckets[i].onmouseover = function(event) {
                   event.currentTarget.nextElementSibling.style.visibility = "visible";
               };
@@ -71,9 +59,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, response) {
       }
   }
   else if((msg.from === "popup") && (msg.subject === "cleanText")) {
-    msgBody = document.querySelector('div[aria-label="Message Body"]');
-    alert("innerText: " + msgBody.innerText);
-    alert("innertHTML: " + msgBody.innerHTML);
+    //msgBody = document.querySelector('div[aria-label="Message Body"]');
     let domInfo = {
         textWithoutMarkup: msgBody.innerText,
         textWithMarkup: msgBody.innerHTML
