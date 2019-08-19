@@ -137,9 +137,26 @@ function getColoredText(sentences, toneData) {
  *                closing span tags.
  */
 function replaceDivs(htmlStr) {
-    return htmlStr.replace(/<div\><br\><\/div\>/g, '<span><br></span>')
-                  .replace(/(<div\>)/g, '<span><br>')
-                  .replace(/(<\/div\>)/g, '</span>');
+    // Handle first line which lacks surrounding div tags
+    let pieceToTransform = htmlStr;
+    let nonTransformedPiece = "";
+    let secondLineStart = htmlStr.indexOf("<div>");
+    if(secondLineStart > 0) {
+        for(let i = 0; i < secondLineStart; i++) {
+            nonTransformedPiece = nonTransformedPiece.concat(htmlStr.charAt(i));
+        }
+        pieceToTransform = htmlStr.substring(secondLineStart);
+    }
+
+    // Handle other lines which are enclosed in div tags
+    return nonTransformedPiece +
+           pieceToTransform.replace(/<div\><br\><\/div\>/g, '<span><br></span>')
+                           .replace(/(<div\>)/g, '<span><br>')
+                           .replace(/(<\/div\>)/g, '</span>')
+                           .replace(/(!)/g, '!</span><span>')
+                           .replace(/(\?)/g, '?</span><span>')
+                           .replace(/(\.)/g, '.</span><span>')
+                           .replace(/<span\><\/span\>/g, '');
 }
 
 /**
@@ -221,7 +238,6 @@ function analyzeEmailText(info) {
         let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
         let textObj = { text: cleanedEmailText };
 
-        // Store orignal html string for later restoration
         chrome.storage.sync.set({originalHtml: info.formattedText}, null);
 
         fetch(toneApi, {
@@ -278,8 +294,6 @@ function getEmailTextAndClean() {
       chrome.tabs.sendMessage(
         tabs[0].id,
         { from: 'popup', subject: 'cleanText' },
-        // ...also specifying a callback to be called
-        //    from the receiving end (content script)
         removeHighlighting
       );
     }
