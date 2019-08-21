@@ -169,7 +169,7 @@ function replaceDivs(htmlStr) {
  */
 function removeHighlighting(domInfo) {
     chrome.storage.sync.get(['originalHtml'], function(result) {
-        console.log('Value currently is ' + result.key);
+        console.log('Now Restoring: ' + result.originalHtml);
         chrome.tabs.query(
             { active: true, currentWindow: true },
             function(tabs) {
@@ -221,7 +221,7 @@ function getDominantTone(toneScores) {
  * @return None.
  */
 function analyzeEmailText(info) {
-    console.log(info.emailText);
+    console.log(info.textWithoutMarkup);
 
     let text = info.textWithoutMarkup;
     let structuredText = info.textWithMarkup.replace(/([\uFEFF])|(<)(\/)*(span)([ a-zA-Z;\-:=\"]*)(\>)/g, "");
@@ -238,39 +238,41 @@ function analyzeEmailText(info) {
         let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
         let textObj = { text: cleanedEmailText };
 
-        chrome.storage.sync.set({originalHtml: info.formattedText}, null);
+        chrome.storage.sync.set({"originalHtml": info.textWithMarkup}, function(result) {
+            console.log("Now saving: " + info.textWithMarkup);
+            fetch(toneApi, {
+                "body": JSON.stringify(textObj),
+                "headers": {
+                    "Authorization": "Bearer ".concat(noQuotesToken),
+                    "Content-Type": "application/json"
+                },
+                "method": "POST"
+            })
+            .then(getResponseBody)
+            .then(getJsonPayload)
+            .then(function(jsonData) {
+                console.log("Tone Analysis Data: " + jsonData);
+                console.log("Structured text: " + structuredText);
+                let textWithoutDivs = replaceDivs(structuredText);
+                console.log("Text without divs: " + textWithoutDivs);
+                let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+                console.log("Structured sentences: " + structuredSentences);
+                let analyzedText = getColoredText(structuredSentences, jsonData);
 
-        fetch(toneApi, {
-            "body": JSON.stringify(textObj),
-            "headers": {
-                "Authorization": "Bearer ".concat(noQuotesToken),
-                "Content-Type": "application/json"
-            },
-            "method": "POST"
-        })
-        .then(getResponseBody)
-        .then(getJsonPayload)
-        .then(function(jsonData) {
-            console.log("Structured text: " + structuredText);
-            let textWithoutDivs = replaceDivs(structuredText);
-            console.log("Text without divs: " + textWithoutDivs);
-            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
-            console.log("Structured sentences: " + structuredSentences);
-            let analyzedText = getColoredText(structuredSentences, jsonData);
-
-            chrome.tabs.query(
-                { active: true, currentWindow: true },
-                function(tabs) {
-                    chrome.tabs.sendMessage(
-                        tabs[0].id,
-                        {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
-                        null
-                    );
-                }
-            );
-        })
-        .catch(function(error) {
-            console.log("Unable to analyze text", error);
+                chrome.tabs.query(
+                    { active: true, currentWindow: true },
+                    function(tabs) {
+                        chrome.tabs.sendMessage(
+                            tabs[0].id,
+                            {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
+                            null
+                        );
+                    }
+                );
+            })
+            .catch(function(error) {
+                console.log("Unable to analyze text", error);
+            });
         });
     })
     .catch(function(error) {
