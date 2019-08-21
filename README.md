@@ -18,3 +18,10 @@ to remove all highligting, and feel free to either make changes to your email
 or send it off.
 
 
+#Known bugs
+Sentences will sometimes disappear when the "Get Perspective" button gets hit.
+This is because the IBM Watson Tone Analyzer API is delimiting the sentences
+in an unexpected way.  For example, "I hate you!  I understand." will be
+treated as a single sentence by the api, and will be analyzed as such while
+the code currently expects that punctuation like periods or exclamation points
+delimit the end of one sentence and the beginning of a new one.
