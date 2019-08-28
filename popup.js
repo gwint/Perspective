@@ -249,6 +249,7 @@ function analyzeEmailText(info) {
     let textObj = { text: cleanedEmailText };
 
     chrome.storage.sync.get(['savedToken'], function(tokenObject) {
+        console.log("Token Used: " + tokenObject.savedToken);
         chrome.storage.sync.set({"originalHtml": info.textWithMarkup}, function(result) {
             console.log("Now saving: " + info.textWithMarkup);
             fetch(toneApi, {
@@ -297,7 +298,7 @@ function analyzeEmailText(info) {
                         fetch(toneApi, {
                             "body": JSON.stringify(textObj),
                             "headers": {
-                                "Authorization": "Bearer ".concat(backupTokenObject.savedToken),
+                                "Authorization": "Bearer ".concat(noQuotesToken),
                                 "Content-Type": "application/json"
                             },
                             "method": "POST"
