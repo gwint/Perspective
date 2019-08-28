@@ -88,6 +88,7 @@ function getColoredText(sentences, toneData) {
     // uncolored text can be written following the block of colored text
     // sent from the popup.
 
+
     if(!('sentences_tone' in toneData)) {
         let dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
         let dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
@@ -98,6 +99,12 @@ function getColoredText(sentences, toneData) {
                               `<span class="toneNote">${noteText}</span>` + '\uFEFF';
         console.log("Single Case HTML string: " + coloredSentence);
         return coloredSentence;
+    }
+
+    // Split apart all sentences even if they were analyzed together by the
+    // tone analyzer api.
+    for(let i = 0; i < toneData['sentences_tone'].length; i++) {
+        //let ithSentence = toneData['sentences_tone'][i][];
     }
 
     colorCodedText = "";
@@ -257,7 +264,7 @@ function analyzeEmailText(info) {
                 console.log("Text without divs: " + textWithoutDivs);
                 let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
                 console.log("Structured sentences: " + structuredSentences);
-                let analyzedText = getColoredText(structuredSentences, jsonData);
+                let analyzedText = getColoredText(structuredSentences, jsonData).replace(/<span\><\/span\>/g, '');
 
                 chrome.tabs.query(
                     { active: true, currentWindow: true },
