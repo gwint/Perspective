@@ -245,22 +245,17 @@ function analyzeEmailText(info) {
     let cleanedEmailText = text.replace(/[\uFEFF]/g, "").replace(/\n/g, " ");
     console.log("Email Text Passed to Analyzer: " + cleanedEmailText);
 
-    let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
+    let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
+    let textObj = { text: cleanedEmailText };
 
-    fetch(tokenApi)
-    .then(getResponseBody)
-    .then(getAuthenticationToken)
-    .then(function(accessToken) {
-        let noQuotesToken = accessToken.substring(1, accessToken.length-1);
-        let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
-        let textObj = { text: cleanedEmailText };
-
+    chrome.storage.sync.get(['savedToken'], function(tokenObject) {
+        console.log("Token Used: " + tokenObject.savedToken);
         chrome.storage.sync.set({"originalHtml": info.textWithMarkup}, function(result) {
             console.log("Now saving: " + info.textWithMarkup);
             fetch(toneApi, {
                 "body": JSON.stringify(textObj),
                 "headers": {
-                    "Authorization": "Bearer ".concat(noQuotesToken),
+                    "Authorization": "Bearer ".concat(tokenObject.savedToken),
                     "Content-Type": "application/json"
                 },
                 "method": "POST"
@@ -289,11 +284,54 @@ function analyzeEmailText(info) {
             })
             .catch(function(error) {
                 console.log("Unable to analyze text", error);
+                // Get a new token, save it, and call tone analyzer api again
+                let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
+
+                fetch(tokenApi)
+                .then(getResponseBody)
+                .then(getAuthenticationToken)
+                .then(function(accessToken) {
+                    let noQuotesToken = accessToken.substring(1, accessToken.length-1);
+
+                    // Save token
+                    chrome.storage.sync.set({"savedToken": noQuotesToken}, function(backupTokenObject) {
+                        fetch(toneApi, {
+                            "body": JSON.stringify(textObj),
+                            "headers": {
+                                "Authorization": "Bearer ".concat(noQuotesToken),
+                                "Content-Type": "application/json"
+                            },
+                            "method": "POST"
+                        })
+                        .then(getResponseBody)
+                        .then(getJsonPayload)
+                        .then(function(jsonData) {
+                            console.log("Tone Analysis Data: " + jsonData);
+                            console.log("Structured text: " + structuredText);
+                            let textWithoutDivs = replaceDivs(structuredText);
+                            console.log("Text without divs: " + textWithoutDivs);
+                            let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+                            console.log("Structured sentences: " + structuredSentences);
+                            let analyzedText = getColoredText(structuredSentences, jsonData).replace(/<span\><\/span\>/g, '');
+
+                            chrome.tabs.query(
+                                { active: true, currentWindow: true },
+                                function(tabs) {
+                                    chrome.tabs.sendMessage(
+                                        tabs[0].id,
+                                        {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedText},
+                                        null
+                                    );
+                                }
+                            );
+                        });
+                    })
+                })
+                .catch(function(error) {
+                    console.log("Unable to get token", error);
+                });
             });
         });
-    })
-    .catch(function(error) {
-        console.log("Unable to get token", error);
     });
 }
 
