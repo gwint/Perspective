@@ -88,7 +88,6 @@ function getColoredText(sentences, toneData) {
     // uncolored text can be written following the block of colored text
     // sent from the popup.
 
-
     if(!('sentences_tone' in toneData)) {
         let dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
         let dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
@@ -103,10 +102,21 @@ function getColoredText(sentences, toneData) {
 
     // Split apart all sentences even if they were analyzed together by the
     // tone analyzer api.
+/*
     for(let i = 0; i < toneData['sentences_tone'].length; i++) {
-        //let ithSentence = toneData['sentences_tone'][i][];
+        let ithSentence = toneData['sentences_tone'][i]['text'];
+        let splitSentences = ithSentence.match(/([a-zA-Z\"0-9\-\.])([\.!?])/g);
+        if(splitSentences.lenth > 1) {
+            toneData['sentences_tone'][i]['text'] = splitSentences[0];
+            for(let j = 1; j < splitSentences.length; j++) {
+                toneData['sentences_tone'].splice(j, 0, toneData['sentences_tone'][i]);
+                toneData['sentences_tone'][j]['text'] = splitSentences[j];
+            }
+        }
     }
-
+    console.log("Tone Data after Transformation: ");
+    console.log(toneData);
+*/
     colorCodedText = "";
     let i = 0;
     for (; i < sentences.length && i < toneData['sentences_tone'].length; i++) {
