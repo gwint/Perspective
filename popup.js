@@ -192,7 +192,8 @@ function removeHighlighting(domInfo) {
             function(tabs) {
                 chrome.tabs.sendMessage(
                     tabs[0].id,
-                    {from: 'popup', subject: 'EmailBodyUpdate', coloredText: result.originalHtml },
+                    {from: 'popup', subject: 'EmailBodyUpdate',
+                        coloredText: result.originalHtml },
                     null
                 );
             }

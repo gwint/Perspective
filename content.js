@@ -56,4 +56,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, response) {
         }
         console.log("text updated successfully");
     }
+    else if((msg.from === "background") && (msg.subject === "makeEmailBodySelfCleaning")) {
+        response(msgBody);
+    }
 });
