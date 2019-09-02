@@ -387,7 +387,23 @@ window.addEventListener('DOMContentLoaded', function () {
         currentWindow: true
     },
     function (tabs) {
+        /*
+            Send message to background script when popup icon gets clicked
+        */
+        //chrome.runtime.sendMessage({from: 'popup', subject: "attachCleaningHandler"});
+        chrome.tabs.query({
+            active: true,
+            currentWindow: true
+        },
+        function(tabs) {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {from: 'popup', subject: 'attachCleaningHandler'},
+                null
+            );
+        });
+
         document.getElementById("getTone").onclick = getEmailTextAndAnalyze;
-        document.getElementById("stripHighlighting").onclick = getEmailTextAndClean;
+        //document.getElementById("stripHighlighting").onclick = getEmailTextAndClean;
     });
 });

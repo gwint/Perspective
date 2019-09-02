@@ -5,6 +5,17 @@ chrome.runtime.sendMessage({
     subject: 'showPageAction'
 });
 
+function getOriginalHTML() {
+    chrome.storage.sync.get(['originalHtml'], function(result) {
+        console.log('Now Restoring: ' + result.originalHtml);
+        msgBody = document.querySelector('div[aria-label="Message Body"]');
+        html = msgBody.innerHTML;
+        if(html.includes("<span>")) {
+            chrome.runtime.sendMessage({from: 'content', subject: 'triggerReplacement', original: result.originalHtml});
+        }
+    });
+}
+
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(function(msg, sender, response) {
     console.log("message recieved at content script");
@@ -56,7 +67,10 @@ chrome.runtime.onMessage.addListener(function(msg, sender, response) {
         }
         console.log("text updated successfully");
     }
-    else if((msg.from === "background") && (msg.subject === "makeEmailBodySelfCleaning")) {
-        response(msgBody);
+    else if((msg.from === "popup") && (msg.subject === "attachCleaningHandler")) {
+        console.log("Message sent from popup reached content script");
+        msgBody.addEventListener("click", getOriginalHTML);
+        //response(msgBody);
+        //response({test: 'test'});
     }
 });

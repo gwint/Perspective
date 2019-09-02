@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css?family=Oleo+Script');
+
+
 body {
 	font-family: "Open Sans", Sans-Serif;
 	color: '#303030';
@@ -6,11 +9,13 @@ body {
 
 button {
 	height: 40px;
-	width: 100px;
+	width: 120px;
 	border-radius: 3px;
-    padding-bottom: 10px;
-    padding: 5px;
+    padding: 1px;
 	outline: none;
     background-color: green;
     color: white;
+    font-family: 'Oleo Script', cursive;
+    font-weight: bold;
+    letter-spacing: 1px;
 }
