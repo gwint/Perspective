@@ -1,5 +1,6 @@
-2) Handling conflicting emotions
-3) A sentence may not generate any tones to choose from in popup.js (line 69)
-4) Assign classes and assign styling based on those classes instead of using
-inline styling
-5) Allow partial sentences to remain untouched.
+- Handling conflicting emotions
+- A sentence may not generate any tones to choose from in popup.js (line 69)
+- Assign classes and assign styling based on those classes instead of using
+  inline styling
+- Allow partial sentences to remain untouched.
+- Allow control over color associated with different tones

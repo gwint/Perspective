@@ -7,7 +7,6 @@ chrome.runtime.sendMessage({
 
 function getOriginalHTML() {
     chrome.storage.sync.get(['originalHtml'], function(result) {
-        console.log('Now Restoring: ' + result.originalHtml);
         msgBody = document.querySelector('div[aria-label="Message Body"]');
         html = msgBody.innerHTML;
         if(html.includes("<span>")) {
@@ -18,7 +17,6 @@ function getOriginalHTML() {
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(function(msg, sender, response) {
-    console.log("message recieved at content script");
     console.log(msg);
     msgBody = document.querySelector('div[aria-label="Message Body"]');
 
@@ -37,7 +35,6 @@ chrome.runtime.onMessage.addListener(function(msg, sender, response) {
     }
     else if((msg.from === "popup") && (msg.subject === "EmailBodyUpdate")) {
         msgBody.innerHTML = msg.coloredText;
-        console.log("Resulting html: " + msg.coloredText);
 
         let toneNotes = document.getElementsByClassName("toneNote");
         for (let i = 0; i < toneNotes.length; i++) {
@@ -65,12 +62,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, response) {
         for (let i = 0; i < divReplacements; i++) {
             divReplacements[i].style.display = "block";
         }
-        console.log("text updated successfully");
     }
     else if((msg.from === "popup") && (msg.subject === "attachCleaningHandler")) {
-        console.log("Message sent from popup reached content script");
         msgBody.addEventListener("click", getOriginalHTML);
-        //response(msgBody);
-        //response({test: 'test'});
     }
 });

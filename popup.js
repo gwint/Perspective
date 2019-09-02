@@ -100,23 +100,6 @@ function getColoredText(sentences, toneData) {
         return coloredSentence;
     }
 
-    // Split apart all sentences even if they were analyzed together by the
-    // tone analyzer api.
-/*
-    for(let i = 0; i < toneData['sentences_tone'].length; i++) {
-        let ithSentence = toneData['sentences_tone'][i]['text'];
-        let splitSentences = ithSentence.match(/([a-zA-Z\"0-9\-\.])([\.!?])/g);
-        if(splitSentences.lenth > 1) {
-            toneData['sentences_tone'][i]['text'] = splitSentences[0];
-            for(let j = 1; j < splitSentences.length; j++) {
-                toneData['sentences_tone'].splice(j, 0, toneData['sentences_tone'][i]);
-                toneData['sentences_tone'][j]['text'] = splitSentences[j];
-            }
-        }
-    }
-    console.log("Tone Data after Transformation: ");
-    console.log(toneData);
-*/
     colorCodedText = "";
     let i = 0;
     for (; i < sentences.length && i < toneData['sentences_tone'].length; i++) {
@@ -307,7 +290,6 @@ function analyzeEmailText(info) {
                         .then(getResponseBody)
                         .then(getJsonPayload)
                         .then(function(jsonData) {
-                            console.log("Tone Analysis Data: " + jsonData);
                             console.log("Structured text: " + structuredText);
                             let textWithoutDivs = replaceDivs(structuredText);
                             console.log("Text without divs: " + textWithoutDivs);
@@ -343,19 +325,17 @@ function analyzeEmailText(info) {
  * @return None.
  */
 function getEmailTextAndClean() {
-  console.log("message sent from popup to content script");
-  chrome.tabs.query({
-      active: true,
-      currentWindow: true
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
     },
     function(tabs) {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { from: 'popup', subject: 'cleanText' },
-        removeHighlighting
-      );
-    }
-  )
+        chrome.tabs.sendMessage(
+            tabs[0].id,
+            { from: 'popup', subject: 'cleanText' },
+            removeHighlighting
+        );
+    })
 }
 
 /**
@@ -365,32 +345,26 @@ function getEmailTextAndClean() {
  * @return None.
  */
 function getEmailTextAndAnalyze() {
-  console.log("message sent from popup to content script");
-  chrome.tabs.query({
-      active: true,
-      currentWindow: true
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
     },
     function(tabs) {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        {from: 'popup', subject: 'analyzeTone'},
-        analyzeEmailText
-      );
-    }
-  )
+        chrome.tabs.sendMessage(
+            tabs[0].id,
+            {from: 'popup', subject: 'analyzeTone'},
+            analyzeEmailText
+        );
+    })
 }
 
 window.addEventListener('DOMContentLoaded', function () {
-    // ...query for the active tab...
     chrome.tabs.query({
         active: true,
         currentWindow: true
     },
     function (tabs) {
-        /*
-            Send message to background script when popup icon gets clicked
-        */
-        //chrome.runtime.sendMessage({from: 'popup', subject: "attachCleaningHandler"});
+        // Send message to background script when popup icon gets clicked
         chrome.tabs.query({
             active: true,
             currentWindow: true
@@ -404,6 +378,5 @@ window.addEventListener('DOMContentLoaded', function () {
         });
 
         document.getElementById("getTone").onclick = getEmailTextAndAnalyze;
-        //document.getElementById("stripHighlighting").onclick = getEmailTextAndClean;
     });
 });
