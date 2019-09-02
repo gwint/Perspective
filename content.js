@@ -1,10 +1,19 @@
-// Inform the background page that
-// this tab should have a page-action
+/*
+ * Inform the background page that
+ * this tab should have a page-action
+ */
 chrome.runtime.sendMessage({
     from: 'content',
     subject: 'showPageAction'
 });
 
+/*
+ * Send a message to the background script to signal that we want the
+ * background to trigger an update to the email's body that would remove
+ * any applied highlighting.
+ *
+ * @return None.
+ */
 function getOriginalHTML() {
     chrome.storage.sync.get(['originalHtml'], function(result) {
         msgBody = document.querySelector('div[aria-label="Message Body"]');
@@ -15,7 +24,9 @@ function getOriginalHTML() {
     });
 }
 
-// Listen for messages from the popup
+/*
+ * Listen for messages from the popup
+ */
 chrome.runtime.onMessage.addListener(function(msg, sender, response) {
     console.log(msg);
     msgBody = document.querySelector('div[aria-label="Message Body"]');

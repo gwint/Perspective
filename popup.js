@@ -160,31 +160,6 @@ function replaceDivs(htmlStr) {
 }
 
 /**
- * Sends message to content script containing a version of the an html string
- * where span tags used for text highlighting have been removed.
- *
- * @param object domInfo An object containing innerText and innerHTML of the
- *                       text area of email body.
- * @return None.
- */
-function removeHighlighting(domInfo) {
-    chrome.storage.sync.get(['originalHtml'], function(result) {
-        console.log('Now Restoring: ' + result.originalHtml);
-        chrome.tabs.query(
-            { active: true, currentWindow: true },
-            function(tabs) {
-                chrome.tabs.sendMessage(
-                    tabs[0].id,
-                    {from: 'popup', subject: 'EmailBodyUpdate',
-                        coloredText: result.originalHtml },
-                    null
-                );
-            }
-        );
-    });
-}
-
-/**
  * Return index of tone with highest score from an array of tone scores.
  *
  * @param object[] toneScores An array of tone score objects containing
@@ -316,26 +291,6 @@ function analyzeEmailText(info) {
             });
         });
     });
-}
-
-/**
- * Sends a "cleanText" message to the content script to remove highlighting
- * from the email body text area.
- *
- * @return None.
- */
-function getEmailTextAndClean() {
-    chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    },
-    function(tabs) {
-        chrome.tabs.sendMessage(
-            tabs[0].id,
-            { from: 'popup', subject: 'cleanText' },
-            removeHighlighting
-        );
-    })
 }
 
 /**
