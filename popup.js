@@ -226,7 +226,7 @@ function analyzeEmailText(info) {
                 console.log("Structured text: " + structuredText);
                 let textWithoutDivs = replaceDivs(structuredText);
                 console.log("Text without divs: " + textWithoutDivs);
-                let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+                let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&\-]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
                 console.log("Structured sentences: " + structuredSentences);
                 let analyzedText = getColoredText(structuredSentences, jsonData).replace(/<span\><\/span\>/g, '');
 

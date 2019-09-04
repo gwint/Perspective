@@ -15,10 +15,12 @@ chrome.runtime.sendMessage({
  * @return None.
  */
 function getOriginalHTML() {
+    console.log("Now grabbing original html...");
     chrome.storage.sync.get(['originalHtml'], function(result) {
         msgBody = document.querySelector('div[aria-label="Message Body"]');
         html = msgBody.innerHTML;
-        if(html.includes("<span>")) {
+        console.log("HTML being replaced: " + html);
+        if(html.includes("</span>")) {
             chrome.runtime.sendMessage({from: 'content', subject: 'triggerReplacement', original: result.originalHtml});
         }
     });
@@ -28,6 +30,7 @@ function getOriginalHTML() {
  * Listen for messages from the popup
  */
 chrome.runtime.onMessage.addListener(function(msg, sender, response) {
+    console.log("Message sent to content script");
     console.log(msg);
     msgBody = document.querySelector('div[aria-label="Message Body"]');
 
@@ -75,6 +78,8 @@ chrome.runtime.onMessage.addListener(function(msg, sender, response) {
         }
     }
     else if((msg.from === "popup") && (msg.subject === "attachCleaningHandler")) {
+        console.log("About to attach event listener");
         msgBody.addEventListener("click", getOriginalHTML);
+        console.log("Event listener to clean should now be attached");
     }
 });
