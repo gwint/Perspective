@@ -186,6 +186,21 @@ function getDominantTone(toneScores) {
     return dominantToneIndex;
 }
 
+/**
+ * Split a string containing html markup into individual sentences where
+ * sentences contain the html tags within which they are nested.  Self-closing
+ * tags are tacked onto the sentences that immediately precede them.
+ *
+ * @param string aStr A html string.
+ * @return array[String] An array of strings representing the sentences
+ *                       contained in the input html string with containing
+                         html tags, if any.  Self-closing html tags are
+ *                       attached to the preceding sentence if there is one.
+ */
+function getStructuredSentences(aStr) {
+    return aStr.match(/([<\>=\/, \"':;a-zA-Z&\-]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+}
+
 
 /**
  * Use IBM Watson Tone Analyzer API to analyze text from email body, highlight
@@ -200,7 +215,9 @@ function analyzeEmailText(info) {
     console.log(info.textWithoutMarkup);
 
     let text = info.textWithoutMarkup;
+    console.log("Original Email Text (No Markup): " + text);
     let structuredText = info.textWithMarkup.replace(/([\uFEFF])|(<)(\/)*(span)([ a-zA-Z;\-:=\"]*)(\>)/g, "");
+    console.log("Original Email Text (With Markup): " + structuredText);
     let cleanedEmailText = text.replace(/[\uFEFF]/g, "").replace(/\n/g, " ");
     console.log("Email Text Passed to Analyzer: " + cleanedEmailText);
 
@@ -226,7 +243,7 @@ function analyzeEmailText(info) {
                 console.log("Structured text: " + structuredText);
                 let textWithoutDivs = replaceDivs(structuredText);
                 console.log("Text without divs: " + textWithoutDivs);
-                let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&\-]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+                let structuredSentences = getStructuredSentences(textWithoutDivs);
                 console.log("Structured sentences: " + structuredSentences);
                 let analyzedText = getColoredText(structuredSentences, jsonData).replace(/<span\><\/span\>/g, '');
 
