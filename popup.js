@@ -17,21 +17,6 @@ TONE_NOTES = {
 };
 
 /**
- * Breaks string representing email body text into sentences where each
- * sentence contains any markup providing structure to that part of the email.
- *
- * @param string emailBodyHtml A string containing the html representing the
- *                             body of an email.
- * @return string[] An array of string representing the sentences comprising
- *                  the body of an email (the html providing the email's
- *                  structure is included with the appropiate sentence)
- */
-function extractIndividualSentences(emailBodyHtml) {
-    console.log(emailBodyHtml);
-    return emailBodyHtml.match(/([a-zA-Z]+)([.?!])/g);
-}
-
-/**
  * Returns a promise that contains the body of an http response.
  *
  * @param Promise response A promise controlling how an http response body
