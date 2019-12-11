@@ -16,44 +16,7 @@ TONE_NOTES = {
     "analytical": "Way to think it through!"
 };
 
-/**
- * Returns a promise that contains the body of an http response.
- *
- * @param Promise response A promise controlling how an http response body
- *                         will be handled.
- * @return Promise A Promise that is either resolved or rejected depending on
- *                 the http response code.
- */
-function getResponseBody(response) {
-    if(response.status >= 200 && response.status < 300) {
-        return Promise.resolve(response);
-    }
-    else {
-        return Promise.reject(new Error(response.statusText));
-    }
-}
-
-/**
- * Returns a Promise containing the JSON body of an http response.
- *
- * @param Promise responseBody A promise containing the body of an http response.
- * @return Promise A Promise that can be used to retrieve the JSON object
- *                 of a http response body.
- */
-function getJsonPayload(responseBody) {
-    return responseBody.json();
-}
-
-/**
- * Returns a Promise containing the string form of the body of an http response.
- *
- * @param  Promise responseBody A promise containing the body of an http response.
- * @return Promise A Promise that can be used to retrieve the body of a http
- *                 response as a string.
- */
-function getAuthenticationToken(responseBody) {
-    return responseBody.text();
-}
+let emailAnalyzer = new EmailAnalyzer(new APIBasedAnalysisScheme());
 
 /**
  *   Returns color-coded version of text where the color is dependant on the
@@ -67,6 +30,7 @@ function getAuthenticationToken(responseBody) {
  *                  based on the tone of each sentence.
  */
 function getColoredText(sentences, toneData) {
+
     console.log(toneData);
     // Chrome Browser does not allow cursor to be placed outside of most
     // recently written to child node, so a 0-width character is used so
@@ -197,6 +161,20 @@ function getStructuredSentences(aStr) {
  * @return None.
  */
 function analyzeEmailText(info) {
+    let analyzedEmailText = emailAnalyzer.(info.textWithMarkup);
+    chrome.tabs.query(
+        {active: true, currentWindow: true},
+        function(tabs) {
+            chrome.tabs.sendMessage(
+                tabs[0].id,
+                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedEmailText},
+                null
+            );
+        }
+    );
+
+    // OLD BELOW THIS LINE -----------------------------------------
+
     console.log(info.textWithoutMarkup);
 
     let text = info.textWithoutMarkup;
@@ -206,7 +184,8 @@ function analyzeEmailText(info) {
     let cleanedEmailText = text.replace(/[\uFEFF]/g, "").replace(/\n/g, " ");
     console.log("Email Text Passed to Analyzer: " + cleanedEmailText);
 
-    let toneApi = "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
+    let toneApi =
+ "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21";
     let textObj = { text: cleanedEmailText };
 
     chrome.storage.sync.get(['savedToken'], function(tokenObject) {
@@ -246,7 +225,8 @@ function analyzeEmailText(info) {
             .catch(function(error) {
                 console.log("Unable to analyze text", error);
                 // Get a new token, save it, and call tone analyzer api again
-                let tokenApi = "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
+                let tokenApi =
+ "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod";
 
                 fetch(tokenApi)
                 .then(getResponseBody)
