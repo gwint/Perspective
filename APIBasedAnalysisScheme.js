@@ -83,4 +83,46 @@ class APIBasedAnalysisScheme {
     function getAuthenticationToken(responseBody) {
         return responseBody.text();
     }
+
+    /**
+     * Split a string containing html markup into individual sentences where
+     * sentences contain the html tags within which they are nested.  Self-closing
+     * tags are tacked onto the sentences that immediately precede them.
+     *
+     * @param string aStr A html string.
+     * @return array[String] An array of strings representing the sentences
+     *                       contained in the input html string with containing
+     *                       html tags, if any.  Self-closing html tags are
+     *                       attached to the preceding sentence if there is one.
+     */
+    function getStructuredSentences(aStr) {
+        return aStr.match(/([<\>=\/, \"':;a-zA-Z&\-]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+    }
+
+    /**
+     * Return index of tone with highest score from an array of tone scores.
+     *
+     * @param object[] toneScores An array of tone score objects containing
+     *                            information about each tone including score,
+     *                            id, and human-readable name.
+     * @return integer An integer representing the index of the tone with the
+     *                 highest score out of all tones contained in toneScores.
+     */
+     function getDominantTone(toneScores) {
+        if(toneScores.length == 0) {
+            return "";
+        }
+
+        dominantToneIndex = 0;
+        dominantToneScore = toneScores[0]['score'];
+
+        for(let i = 1; i < toneScores.length; i++) {
+            if(toneScores[i]['score'] > dominantToneScore) {
+                dominantToneScore = toneScores[i]['score'];
+                dominantToneIndex = i;
+            }
+        }
+
+        return dominantToneIndex;
+    }
 }
