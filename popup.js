@@ -10,7 +10,8 @@ let emailAnalyzer = new EmailAnalyzer(new APIBasedAnalysisScheme());
  * @return None.
  */
 function analyzeEmailText(info) {
-    let analyzedEmailText = emailAnalyzer.analyze(info.innerText);
+    console.log(info);
+    let analyzedEmailText = emailAnalyzer.analyze(info);
 
     chrome.tabs.query(
         {active: true, currentWindow: true},
