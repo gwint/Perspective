@@ -1,6 +1,7 @@
 class EmailAnalyzer {
     constructor(analysisScheme) {
         this.analysisScheme = analysisScheme;
+        EmailAnalyzer.analyzedText = "";
     }
 
     /**
@@ -22,7 +23,7 @@ class EmailAnalyzer {
         // sent from the popup.
 
         if(!('sentences_tone' in toneData)) {
-            let dominantToneIndex = getDominantTone(toneData['document_tone']['tones']);
+            let dominantToneIndex = this.getDominantTone(toneData['document_tone']['tones']);
             let dominantTone = toneData['document_tone']['tones'][dominantToneIndex]['tone_id'];
             let textColor = COLOR_CODE[dominantTone];
             let noteText = TONE_NOTES[dominantTone];
@@ -42,7 +43,7 @@ class EmailAnalyzer {
 
             let coloredSentence = sentenceText + '\uFEFF';
             if (sentenceToneData['tones'].length > 0) {
-                let dominantToneIndex = getDominantTone(sentenceToneData['tones']);
+                let dominantToneIndex = this.getDominantTone(sentenceToneData['tones']);
                 let dominantTone = sentenceToneData['tones'][dominantToneIndex]['tone_id'];
                 let textColor = COLOR_CODE[dominantTone];
                 let noteText = TONE_NOTES[dominantTone];
@@ -72,9 +73,8 @@ class EmailAnalyzer {
             return "";
         }
 
-        dominantToneIndex = 0;
-        dominantToneScore = toneScores[0]['score'];
-
+        let dominantToneIndex = 0;
+        let dominantToneScore = toneScores[0]['score'];
         for(let i = 1; i < toneScores.length; i++) {
             if(toneScores[i]['score'] > dominantToneScore) {
                 dominantToneScore = toneScores[i]['score'];
@@ -134,10 +134,16 @@ class EmailAnalyzer {
         return aStr.match(/([<\>=\/, \"':;a-zA-Z&\-]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
     }
 
-    analyze(emailHTML) {
+    async analyze(emailInfo) {
         // use analysis scheme to get mapping from sentences to tones
-        // superimpose color onto email text
+        await this.analysisScheme.getToneInfo(emailInfo.textWithoutMarkup);
 
-        return emailHTML;
+        // superimpose color onto email text
+        let textWithoutDivs = this.replaceDivs(emailInfo.textWithMarkup);
+        console.log("Text without divs: " + textWithoutDivs);
+        let structuredSentences = this.getStructuredSentences(textWithoutDivs);
+        console.log("Structured sentences: " + structuredSentences);
+
+        EmailAnalyzer.analyzedText = this.getColoredText(structuredSentences, APIBasedAnalysisScheme.toneInfo).replace(/<span\><\/span\>/g, '');
     }
 }

@@ -9,16 +9,17 @@ let emailAnalyzer = new EmailAnalyzer(new APIBasedAnalysisScheme());
  *                    email body text area.
  * @return None.
  */
-function analyzeEmailText(info) {
+async function analyzeEmailText(info) {
     console.log(info);
-    let analyzedEmailText = emailAnalyzer.analyze(info);
+    await emailAnalyzer.analyze(info);
+    console.log("analyzed text: " + EmailAnalyzer.analyzedText);
 
     chrome.tabs.query(
         {active: true, currentWindow: true},
         function(tabs) {
             chrome.tabs.sendMessage(
                 tabs[0].id,
-                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: analyzedEmailText},
+                {from: 'popup', subject: 'EmailBodyUpdate', coloredText: EmailAnalyzer.analyzedText},
                 null
             );
         }

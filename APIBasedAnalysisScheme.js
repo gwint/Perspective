@@ -5,7 +5,7 @@ class APIBasedAnalysisScheme {
         this.timeoutTime = new Date();
         this.ttl = 5;
         APIBasedAnalysisScheme.token = "";
-        APIBasedAnalysisScheme.analyzedText = "";
+        APIBasedAnalysisScheme.toneInfo = {};
     }
 
     async getToken() {
@@ -37,10 +37,11 @@ class APIBasedAnalysisScheme {
      *                    email body text area.
      * @return None.
      */
-    async analyze(sentences) {
+    async getToneInfo(sentences) {
         // Access IBM Watson tone analyzer api and get tone analysis
+        let textObj = {text: sentences};
         await this.getToken();
-        fetch(this.APIURL, {
+        return fetch(this.APIURL, {
             "body": JSON.stringify(textObj),
             "headers": {
                 "Authorization": "Bearer ".concat(APIBasedAnalysisScheme.token),
@@ -48,22 +49,18 @@ class APIBasedAnalysisScheme {
             },
             "method": "POST"
         })
-        .then(getResponseBody)
-        .then(getJsonPayload)
-        .then(function(jsonData) {
-            let textWithoutDivs = replaceDivs(structuredText);
-            console.log("Text without divs: " + textWithoutDivs);
-            let structuredSentences = getStructuredSentences(textWithoutDivs);
-            console.log("Structured sentences: " + structuredSentences);
-            let analyzedText = getColoredText(structuredSentences, jsonData).replace(/<span\><\/span\>/g, '');
-
-            APIBasedAnalysisScheme.analyzedText = analyzedText;
+        .then(this.getResponseBody)
+        .then(this.getJsonPayload)
+        .then(async function(jsonData) {
+            console.log("tone: ");
+            console.log(jsonData);
+            APIBasedAnalysisScheme.toneInfo = jsonData;
         })
         .catch(async function(error) {
             console.log("Unable to analyze text", error);
             await this.getToken();
 
-            fetch(this.APIURL, {
+            return fetch(this.APIURL, {
                 "body": JSON.stringify(textObj),
                 "headers": {
                     "Authorization": "Bearer ".concat(APIBasedAnalysisScheme.token),
@@ -71,17 +68,12 @@ class APIBasedAnalysisScheme {
                 },
                 "method": "POST"
             })
-            .then(getResponseBody)
-            .then(getJsonPayload)
+            .then(this.getResponseBody)
+            .then(this.getJsonPayload)
             .then(function(jsonData) {
-                console.log("Structured text: " + structuredText);
-                let textWithoutDivs = replaceDivs(structuredText);
-                console.log("Text without divs: " + textWithoutDivs);
-                let structuredSentences = textWithoutDivs.match(/([<\>=\/, \":;a-zA-Z&]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
-                console.log("Structured sentences: " + structuredSentences);
-                let analyzedText = getColoredText(structuredSentences, jsonData).replace(/<span\><\/span\>/g, '');
-
-                APIBasedAnalysisScheme.analyzedText = analyzedText;
+                console.log("tone: ");
+                console.log(jsonData);
+                APIBasedAnalysisScheme.toneInfo = jsonData;
             });
         });
     }
