@@ -1,3 +1,21 @@
+COLOR_CODE = {
+    "anger": "red",
+    "joy": "yellow",
+    "confident": "blue",
+    "tentative": "grey",
+    "sad": "brown",
+    "analytical": "YellowGreen"
+};
+
+TONE_NOTES = {
+    "anger": "You sound a bit angry here",
+    "joy": "Someone's happy",
+    "confident": "Yesssssss!, point, blank, periodt!",
+    "tentative": "Speak up a bit",
+    "sad": "Sounding a bit down there",
+    "analytical": "Way to think it through!"
+};
+
 class EmailAnalyzer {
     constructor(analysisScheme) {
         this.analysisScheme = analysisScheme;
@@ -17,6 +35,8 @@ class EmailAnalyzer {
      */
     getColoredText(sentences, toneData) {
         console.log(toneData);
+        console.log("sentences: ");
+        console.log(sentences);
         // Chrome Browser does not allow cursor to be placed outside of most
         // recently written to child node, so a 0-width character is used so
         // uncolored text can be written following the block of colored text
@@ -34,7 +54,7 @@ class EmailAnalyzer {
             return coloredSentence;
         }
 
-        colorCodedText = "";
+        let colorCodedText = "";
         let i = 0;
         for (; i < sentences.length && i < toneData['sentences_tone'].length; i++) {
             console.log("Sentence: " + sentences[i]);
@@ -85,6 +105,9 @@ class EmailAnalyzer {
         return dominantToneIndex;
     }
 
+    insertSpansToSplitSentences(htmlStr) {
+    }
+
     /**
      * Returns version of an html string where all opening div tags have been
      * replaced with a span tag immediately followed by a line break tag and
@@ -131,7 +154,7 @@ class EmailAnalyzer {
      *                       attached to the preceding sentence if there is one.
      */
     getStructuredSentences(aStr) {
-        return aStr.match(/([<\>=\/, \"':;a-zA-Z&\-]+)([.?!](((<\/)([a-zA-Z]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
+        return aStr.match(/([<\>=\/, \"':;a-zA-Z0-9&\-]+)([.?!](((<\/)([a-zA-Z0-9]+)(\>))|(&nbsp;)|[ ]|(<br\>))*|($))/g);
     }
 
     async analyze(emailInfo) {
