@@ -1,3 +1,69 @@
+COLOR_CODE = {
+    "anger": "red",
+    "joy": "yellow",
+    "confident": "blue",
+    "tentative": "grey",
+    "sad": "brown",
+    "analytical": "YellowGreen"
+};
+
+TONE_NOTES = {
+    "anger": "You sound a bit angry here",
+    "joy": "Someone's happy",
+    "confident": "Yesssssss!, point, blank, periodt!",
+    "tentative": "Speak up a bit",
+    "sad": "Sounding a bit down there",
+    "analytical": "Way to think it through!"
+};
+
+const API_URLS = {
+    toneAPI: "https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21",
+    tokenAPI: "https://ef108mo7w9.execute-api.us-east-1.amazonaws.com/Prod"
+};
+
+const TTL = 5;
+
+async function getToken(currentToken) {
+    if(Date.now() < currentToken.timeoutTime) {
+        return currentToken;
+    }
+
+    let tokenPromise =
+    fetch(API_URLS[tokenAPI])
+    .then(response => response.status >= 200 && response.status < 300 ? Promise.resolve(response): Promise.reject(new Error(response.statusText)))
+    .then(body => body.text())
+    .then(function(accessToken) {
+        return {
+            token: accessToken.substring(1, accessToken.length-1),
+            timeoutTime: new Date() + TTL
+        };
+    });
+
+    return await tokenPromise.then();
+}
+
+async function getToneInfo(token, sentences) {
+
+    return fetch(API_URLS[toneAPI], {
+        "body": JSON.stringify({text: sentences}),
+        "headers": {
+            "Authorization": "Bearer ".concat(token),
+            "Content-Type": "application/json"
+        },
+        "method": "POST"
+    })
+    .then(response => response.status >= 200 && response.status < 300 ? Promise.resolve(response): Promise.reject(new Error(response.statusText)))
+    .then(body => body.json())
+    .then(async function(jsonData) {
+        console.log("tone: ");
+        console.log(jsonData);
+        let toneInfo = jsonData;
+    })
+    .catch(async function(error) {
+        console.log("Unable to analyze text", error);
+    });
+}
+
 function getColoredText(sentences, toneData) {
     console.log(toneData);
     console.log("sentences: ");
@@ -98,6 +164,6 @@ async function analyze(emailInfo) {
     let structuredSentences = this.getStructuredSentences(textWithoutDivs);
     console.log("Structured sentences: " + structuredSentences);
 
-    EmailAnalyzer.analyzedText = this.getColoredText(structuredSentences, APIBasedAnalysisScheme.toneInfo).replace(/<span\><\/span\>/g, '');
+    return getColoredText(structuredSentences, APIBasedAnalysisScheme.toneInfo).replace(/<span\><\/span\>/g, '');
 }
 
